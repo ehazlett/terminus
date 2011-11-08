@@ -61,7 +61,7 @@ def login():
     else:
         if utils.encrypt_password(password, app.config['SECRET_KEY']) == user['password']:
             auth_token = str(uuid.uuid4())
-            user.update({'auth_token': auth_token})
+            g.db.users.update({'username': username}, {"$set": {'auth_token': auth_token} })
             session['user'] = username
             session['role'] = user['role']
             session['auth_token'] = auth_token
@@ -76,8 +76,7 @@ def logout():
     if 'role' in session:
         session.pop('role')
     if 'user' in session:
-        user = g.db.users.find_one({'username': session['user']})
-        user.update({'auth_token': None})
+        g.db.users.update({'username': session['user']}, {"$set": {'auth_token': None} })
         session.pop('user')
         flash(messages.LOGGED_OUT)
     return redirect(url_for('index'))
@@ -89,8 +88,8 @@ def accounts():
     roles = g.db.roles.find()
     # sort
     ctx = {
-        'users': users,
-        'roles': roles,
+        'users': list(users),
+        'roles': list(roles),
     }
     return render_template('users.html', **ctx)
 

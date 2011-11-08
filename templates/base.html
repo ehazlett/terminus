@@ -26,7 +26,7 @@
   </head>
   <body>
     {% with messages = get_flashed_messages(with_categories=true) %}
-    <div id="messages" {% if messages %}class="hide"{% endif %}>
+    <div id="messages" {% if not messages %}class="hide"{% endif %}>
       {% if messages %}
         {% for category, message in messages %}
           <div class="alert-message {{category}} fade in" data-alert="alert">

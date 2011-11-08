@@ -58,7 +58,6 @@ def toggle_user(username=None, enabled=None):
     else:
         raise RuntimeError('User not found')
 
-
 def encrypt_password(password=None, salt=None):
     h = hashlib.sha256(salt)
     h.update(password+salt)
