@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block page_header %}tasks{% endblock %}
+
+{% block main_content %}
+<div class="row">
+  <div class="span14">
+    {% if tasks %}
+    <table id="tasks" class="zebra-striped">
+      <thead>
+        <tr>
+          <th>Task</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      {% for task in tasks %}
+      <tr>
+        <td>
+          <dl>
+            <dt>{{task.task}}</dt>
+            <dd>{{task.data}}</dd>
+          </dl>
+        </td>
+        <td width="10%">
+          {% if task.status == 'new' %}
+          <span class="label success">New</span>
+          {% elif task.status == 'running' %}
+          <span class="label warning">Running</span>
+          {% else %}
+          <span class="label">Complete</span>
+          {% endif %}
+        </td>
+        <td width="10%"><a class="btn" href="#" data-url="{{url_for('delete_task', task_id=task.id)}}">Delete</a></td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <div>There are no tasks in the queue.</div>
+    {% endif %}
+  </div>
+</div>
+<script type="text/javascript">
+  $(document).ready(function(){
+    $("#tasks a.btn").click(function() {
+      if (confirm('Are you sure you want to delete the task?')) {
+        $(location).attr('href', (this).getAttribute('data-url'));
+      }
+    });
+  });
+</script>
+{% endblock %}
