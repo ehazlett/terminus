@@ -151,6 +151,8 @@
 </div>
 <script type="text/javascript">
   $(document).ready(function(){
+    $("table#users").tablesorter({ sortList: [[0,0]]});
+    $("table#roles").tablesorter({ sortList: [[0,0]]});
     $("#button-create-user").click(function(){
       // validate form
       var errors = false;

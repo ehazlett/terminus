@@ -95,8 +95,7 @@ def logout():
 def accounts():
     users = [json.loads(g.db.get(x)) for x in g.db.keys(schema.USER_KEY.format('*'))]
     roles = [json.loads(g.db.get(x)) for x in g.db.keys(schema.ROLE_KEY.format('*'))]
-    users.sort()
-    roles.sort()
+    print(users)
     ctx = {
         'users': users,
         'roles': roles,

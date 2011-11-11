@@ -21,20 +21,19 @@ class DelayedResult(object):
 def task(f):
     def delay(*args, **kwargs):
         db = application.get_db_connection()
-        qkey = settings.TASK_QUEUE_KEY
+        qkey = settings.TASK_QUEUE_NAME
         task_id = str(uuid.uuid4())
         key = '{0}:{1}'.format(qkey, task_id)
         s = pickle.dumps((f, key, args, kwargs))
-        db.rpush(settings.TASK_QUEUE_KEY, s)
+        db.rpush(settings.TASK_QUEUE_NAME, s)
         return DelayedResult(key)
     f.delay = delay
     return f
 
 def queue_daemon(app, rv_ttl=settings.TASK_QUEUE_KEY_TTL):
-    log = config.get_logger('queue.queue_daemon')
     db = application.get_db_connection()
     while True:
-        msg = db.blpop(settings.TASK_QUEUE_KEY)
+        msg = db.blpop(settings.TASK_QUEUE_NAME)
         print('Running task: {0}'.format(msg))
         func, key, args, kwargs = pickle.loads(msg[1])
         db.set(key, 'Running...')
