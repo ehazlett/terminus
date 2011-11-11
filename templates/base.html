@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>aristotle{% if title %}:: {{title}}{% endif %}</title>
+    <title>{{config['APP_NAME']}}{% if title %}:: {{title}}{% endif %}</title>
     <meta name="description" content="">
     <meta name="author" content="">
 
@@ -40,7 +40,7 @@
     <div class="topbar">
       <div class="fill">
         <div class="container">
-          <a class="brand" href="/">eve</a>
+          <a class="brand" href="/">{{config['APP_NAME']}}</a>
           <ul class="nav">
             {% if session.role == 'admin' %}
             <li id="link_about"><a href="{{url_for('tasks')}}">tasks</a></li>

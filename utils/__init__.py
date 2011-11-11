@@ -11,49 +11,56 @@ def create_user(username=None, email=None, password=None, role=None, enabled=Tru
     if not username or not password or not role:
         raise NameError('You must specify a username, password, and role')
     db = application.get_db_connection()
+    user_key = schema.USER_KEY.format(username)
     data = schema.user(username=username, email=email, \
         password=encrypt_password(password, settings.SECRET_KEY), \
         role=role, enabled=enabled)
-    db.users.insert(data)
+    db.set(user_key, json.dumps(data))
     return True
 
 def create_role(rolename=None):
     if not rolename:
         raise NameError('You must specify a rolename')
     db = application.get_db_connection()
+    role_key = schema.ROLE_KEY.format(rolename)
     data = schema.role(rolename)
-    db.roles.insert(data)
+    db.set(role_key, json.dumps(data))
     return True
 
 def delete_user(username=None):
     if not username:
         raise NameError('You must specify a username')
     db = application.get_db_connection()
-    db.users.remove({'username': username})
+    user_key = schema.USER_KEY.format(username)
+    db.delete(user_key)
     return True
 
 def delete_role(rolename=None):
     if not rolename:
         raise NameError('You must specify a rolename')
     db = application.get_db_connection()
-    db.roles.delete(schema.role(rolename=rolename))
+    role_key = schema.ROLE_KEY.format(rolename)
+    db.delete(role_key)
     return True
 
 def toggle_user(username=None, enabled=None):
     if not username:
         raise NameError('You must specify a username')
     db = application.get_db_connection()
-    user = db.users.find_one({'username': username})
+    user_key = schema.USER_KEY.format(username)
+    user = db.get(user_key)
     if user:
+        user_data = json.loads(user)
         if enabled != None:
-            user['enabled'] = enabled
+            user_data['enabled'] = enabled
         else:
-            current_status = user['enabled']
+            current_status = user_data['enabled']
             if current_status:
                 enabled = False
             else:
                 enabled = True
-        db.users.update({'username': username}, {"$set": {'enabled': enabled} })
+            user_data['enabled'] = enabled
+        db.set(user_key, json.dumps(user_data))
         return True
     else:
         raise RuntimeError('User not found')

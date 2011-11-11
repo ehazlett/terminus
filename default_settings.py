@@ -7,15 +7,26 @@ try:
 except ImportError:
     import json
 
+APP_NAME = 'minion'
+# add api keys here for api access
+API_KEYS = (
+    'defaultapikey',
+)
 DEBUG = True
 # mongo
 DB_HOST = 'localhost'
-DB_PORT = 27017
-DB_NAME = 'aristotle'
-DB_USER = 'aristotle'
-DB_PASSWORD = '1q2w3e4r5t'
+DB_PORT = 6379
+DB_NAME = 0
+DB_USER = '<DBUSER>'
+DB_PASSWORD = '<DBPASS>'
 # queue settings
-TASK_QUEUE_NAME = 'queue'
+TASK_QUEUE_NAME = '{0}_queue'.format(APP_NAME)
+TASK_QUEUE_KEY_TTL = 86400
 # app version
 VERSION = '0.1'
-SECRET_KEY = "HQchIex0baL9oZ]+Aw>}t|(mlYGB)V"
+SECRET_KEY = "<SECRET_KEY>"
+
+try:
+    from local_settings import *
+except ImportError:
+    pass

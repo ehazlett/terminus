@@ -14,12 +14,13 @@ import sys
 import settings
 from optparse import OptionParser
 from getpass import getpass
-import pymongo
+import redis
 import utils
+from utils import deploy
 import queue
 import schema
 import messages
-from decorators import admin_required, login_required
+from decorators import admin_required, login_required, api_key_required
 
 app = Flask(__name__)
 app.debug = settings.DEBUG
@@ -35,10 +36,8 @@ def teardown_request(exception):
     pass
 
 def get_db_connection():
-    conn = pymongo.Connection(host=app.config['DB_HOST'], \
-        port=app.config['DB_PORT'], username=app.config['DB_USER'], \
-        password=app.config['DB_PASSWORD'])
-    return conn[app.config['DB_NAME']]
+    return redis.Redis(host=app.config['DB_HOST'], port=app.config['DB_PORT'], \
+        db=app.config['DB_NAME'], password=app.config['DB_PASSWORD'])
 
 @app.route("/")
 def index():
@@ -55,16 +54,22 @@ def about():
 def login():
     username = request.form['username']
     password = request.form['password']
-    user = g.db.users.find_one({'username': username})
+    user_key = schema.USER_KEY.format(username)
+    user = g.db.get(user_key)
     if not user:
         flash(messages.INVALID_USERNAME_PASSWORD, 'error')
     else:
-        if utils.encrypt_password(password, app.config['SECRET_KEY']) == user['password']:
-            auth_token = str(uuid.uuid4())
-            g.db.users.update({'username': username}, {"$set": {'auth_token': auth_token} })
-            session['user'] = username
-            session['role'] = user['role']
-            session['auth_token'] = auth_token
+        user_data = json.loads(user)
+        if utils.encrypt_password(password, app.config['SECRET_KEY']) == user_data['password']:
+            if not user_data['enabled']:
+                flash(messages.USER_ACCOUNT_DISABLED, 'error')
+            else:
+                auth_token = str(uuid.uuid4())
+                user_data['auth_token'] = auth_token
+                session['user'] = username
+                session['role'] = user_data['role']
+                session['auth_token'] = auth_token
+                g.db.set(user_key, json.dumps(user_data))
         else:
             flash(messages.INVALID_USERNAME_PASSWORD, 'error')
     return redirect(url_for('index'))
@@ -76,7 +81,11 @@ def logout():
     if 'role' in session:
         session.pop('role')
     if 'user' in session:
-        g.db.users.update({'username': session['user']}, {"$set": {'auth_token': None} })
+        user_key = schema.USER_KEY.format(session['user'])
+        user = g.db.get(user_key)
+        user_data = json.loads(user)
+        user_data['auth_token'] = None
+        g.db.set(user_key, json.dumps(user_data))
         session.pop('user')
         flash(messages.LOGGED_OUT)
     return redirect(url_for('index'))
@@ -84,12 +93,13 @@ def logout():
 @app.route("/accounts/")
 @admin_required
 def accounts():
-    users = g.db.users.find()
-    roles = g.db.roles.find()
-    # sort
+    users = [json.loads(g.db.get(x)) for x in g.db.keys(schema.USER_KEY.format('*'))]
+    roles = [json.loads(g.db.get(x)) for x in g.db.keys(schema.ROLE_KEY.format('*'))]
+    users.sort()
+    roles.sort()
     ctx = {
-        'users': list(users),
-        'roles': list(roles),
+        'users': users,
+        'roles': roles,
     }
     return render_template('users.html', **ctx)
 
@@ -150,11 +160,25 @@ def delete_role(rolename):
 @admin_required
 def tasks():
     ctx = {
-        'tasks': g.db[settings.TASK_QUEUE_NAME].find(),
+        'tasks': list(g.db[settings.TASK_QUEUE_NAME].find()),
     }
+    print(list(g.db[settings.TASK_QUEUE_NAME].find()))
     return render_template("tasks.html", **ctx)
 
-# ----- management command -----
+# ----- API -----
+@app.route("/api/<action>", methods=['GET', 'POST'])
+@api_key_required
+def api(action=None):
+    if action.lower() == 'version':
+        return jsonify({'name': app.config['APP_NAME'], 'version': app.config['VERSION']})
+    elif action.lower() == 'deploy':
+        data = {}
+        data['task_id'] = deploy.deploy_app.delay('testpackage').key
+        return jsonify(data)
+
+# ----- END API -----
+
+# ----- management commands -----
 def create_user():
     db = get_db_connection()
     try:
@@ -169,7 +193,7 @@ def create_user():
                 print('Passwords do not match... Try again...')
         role = raw_input('Role: ').strip()
         # create role if needed
-        if not db.roles.find_one(schema.role(role)):
+        if not db.get(schema.ROLE_KEY.format(role)):
             utils.create_role(role)
         utils.create_user(username=username, email=email, password=password, \
             role=role, enabled=True)

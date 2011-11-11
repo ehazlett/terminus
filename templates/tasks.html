@@ -30,7 +30,7 @@
           <span class="label">Complete</span>
           {% endif %}
         </td>
-        <td width="10%"><a class="btn" href="#" data-url="{{url_for('delete_task', task_id=task.id)}}">Delete</a></td>
+        <td width="10%"><a class="btn" href="#" data-url="{{url_for('delete_task', task_id=task.key)}}">Delete</a></td>
       </tr>
       {% endfor %}
     </table>
