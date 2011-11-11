@@ -17,8 +17,8 @@
       <tr>
         <td>
           <dl>
-            <dt>{{task.task}}</dt>
-            <dd>{{task.data}}</dd>
+            <dt>{{task.key}}</dt>
+            <dd>{{task.status}}</dd>
           </dl>
         </td>
         <td width="10%">
@@ -35,7 +35,7 @@
       {% endfor %}
     </table>
     {% else %}
-    <div>There are no tasks in the queue.</div>
+    <div>There are no tasks.</div>
     {% endif %}
   </div>
 </div>

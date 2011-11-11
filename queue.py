@@ -1,5 +1,6 @@
 #!/usr/bin/env
 from flask import current_app
+from flask import json
 import application
 import pickle
 import uuid
@@ -10,6 +11,7 @@ class DelayedResult(object):
         self.db = application.get_db_connection()
         self.key = key
         self._rv = None
+
     @property
     def return_value(self):
         if self._rv is None:
@@ -36,13 +38,17 @@ def queue_daemon(app, rv_ttl=settings.TASK_QUEUE_KEY_TTL):
         msg = db.blpop(settings.TASK_QUEUE_NAME)
         print('Running task: {0}'.format(msg))
         func, key, args, kwargs = pickle.loads(msg[1])
-        db.set(key, 'Running...')
+        data = {'key': key, 'status': 'running', 'output': None}
+        db.set(key, json.dumps(data))
         try:
             rv = func(*args, **kwargs)
+            data['status'] = 'complete'
         except Exception, e:
             rv = e
+            data['status'] = 'error'
+        data['output'] = str(rv)
         if rv is not None:
-            db.set(key, pickle.dumps(rv))
+            db.set(key, json.dumps(data))
             db.expire(key, rv_ttl)
 
 if __name__=='__main__':

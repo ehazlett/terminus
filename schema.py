@@ -1,6 +1,8 @@
+#!/usr/bin/env python
+import time
+
 USER_KEY = 'users:{0}'
 ROLE_KEY = 'roles:{0}'
-TASK_KEY = 'tasks:{0}'
 LOG_KEY = 'logs:{0}'
 
 def user(username=None, first_name=None, last_name=None, email=None, \
@@ -21,6 +23,7 @@ def role(rolename=None):
 
 def log(level=None, category='root', message=None):
     data = {
+        'date': time.time(),
         'level': level,
         'category': category,
         'message': message,

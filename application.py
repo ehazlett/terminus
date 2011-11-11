@@ -158,11 +158,34 @@ def delete_role(rolename):
 @app.route("/tasks/")
 @admin_required
 def tasks():
+    tasks = []
+    for t in g.db.keys('{0}:*'.format(app.config['TASK_QUEUE_NAME'])):
+        tasks.append(json.loads(g.db.get(t)))
     ctx = {
-        'tasks': list(g.db[settings.TASK_QUEUE_NAME].find()),
+        'tasks': tasks,
     }
-    print(list(g.db[settings.TASK_QUEUE_NAME].find()))
     return render_template("tasks.html", **ctx)
+
+@app.route("/tasks/delete/<task_id>/")
+@admin_required
+def delete_task(task_id):
+    # delete 'complete' key
+    if task_id.find(':') > -1:
+        g.db.delete(task_id)
+    else: # task is 'new'
+        task_id = int(task_id)
+        if task_id == 0:
+            g.db.lpop(app.config['TASK_QUEUE_NAME'])
+        else: # hack -- rebuild list because `del lindex list <index>` doesn't work in redis-py
+            pre = g.db.lrange(app.config['TASK_QUEUE_NAME'], 0, task_id-1)
+            post = g.db.lrange(app.config['TASK_QUEUE_NAME'], task_id+1, -1)
+            pre.reverse()
+            post.reverse()
+            g.db.delete(app.config['TASK_QUEUE_NAME'])
+            [g.db.lpush(app.config['TASK_QUEUE_NAME'], x) for x in post]
+            [g.db.lpush(app.config['TASK_QUEUE_NAME'], x) for x in pre]
+    flash('Task deleted...', 'success')
+    return redirect(url_for('tasks'))
 
 # ----- API -----
 @app.route("/api/<action>", methods=['GET', 'POST'])

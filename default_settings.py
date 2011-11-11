@@ -20,7 +20,7 @@ DB_NAME = 0
 DB_USER = '<DBUSER>'
 DB_PASSWORD = '<DBPASS>'
 # queue settings
-TASK_QUEUE_NAME = '{0}_queue'.format(APP_NAME)
+TASK_QUEUE_NAME = 'queue'
 TASK_QUEUE_KEY_TTL = 86400
 # app version
 VERSION = '0.1'
