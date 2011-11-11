@@ -1,3 +1,3 @@
-Aristotle
+Minion
 =========
-Law application
+Application management system
