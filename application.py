@@ -14,6 +14,7 @@ import sys
 import settings
 from optparse import OptionParser
 from getpass import getpass
+from datetime import datetime
 import redis
 import utils
 from utils import deploy
@@ -26,6 +27,13 @@ app = Flask(__name__)
 app.debug = settings.DEBUG
 app.logger.setLevel(logging.ERROR)
 app.config.from_object('settings')
+
+# ----- filters -----
+@app.template_filter('datefromtime')
+def datefromtime_filter(time):
+    return datetime.fromtimestamp(time)
+
+# ----- end filters ----
 
 @app.before_request
 def before_request():
@@ -194,6 +202,27 @@ def delete_all_tasks():
         g.db.delete(k)
     flash('All tasks removed...', 'success')
     return redirect(url_for('tasks'))
+
+@app.route("/logs/")
+@admin_required
+def logs():
+    logs = []
+    log_key = schema.LOG_KEY.format('*')
+    for l in g.db.keys(log_key):
+        logs.append(json.loads(g.db.get(l)))
+    ctx = {
+        'logs': logs,
+    }
+    return render_template("logs.html", **ctx)
+
+@app.route("/logs/clear/")
+@admin_required
+def clear_logs():
+    for k in g.db.keys(schema.LOG_KEY.format('*')):
+        g.db.delete(k)
+    flash('Logs cleared...', 'success')
+    return redirect(url_for('logs'))
+
 
 # ----- API -----
 @app.route("/api/<action>", methods=['GET', 'POST'])
