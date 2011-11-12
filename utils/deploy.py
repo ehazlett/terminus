@@ -36,6 +36,11 @@ def deploy_app(package=None):
             mdata = json.loads(open(manifest, 'r').read())
             if 'application' in mdata:
                 app_name = mdata['application']
+                if 'version' in mdata:
+                    version = mdata['version']
+                    log_message(logging.INFO, app_name, 'Deploying version {0}'.format(version))
+                else:
+                    version = None
                 if 'packages' in mdata:
                     pkgs = mdata['packages']
                 else:
@@ -65,28 +70,48 @@ def deploy_app(package=None):
                 app_dir = os.path.join(settings.APPLICATION_BASE_DIR, app_name)
                 if not os.path.exists(app_dir):
                     os.makedirs(app_dir)
+                else:
+                    # remove existing and re-create 
+                    shutil.rmtree(app_dir)
+                    os.makedirs(app_dir)
                 install_app_data = {}
                 if repo_type and repo_url:
-                    log_message(logging.DEBUG, app_name, 'Cloning {0} from {1} using {2}'.format(app_name, repo_url, repo_type))
+                    log_message(logging.INFO, app_name, 'Cloning {0} from {1} using {2}'.format(app_name, repo_url, repo_type))
                     install_app_data['repo_url'] = repo_url
                     if repo_type == 'git':
                         install_app_data['repo_init'] = 'Cloning with git'
                         p = Popen(['git', 'clone', repo_url], stdout=PIPE, stderr=PIPE, cwd=app_dir)
+                        os.waitpid(p.pid, 0)
                     elif repo_type == 'hg':
-                        p = Popen(['hg', 'clone', repo_url], stdout=PIPE, stderr=PIPE, cwd=app_dir)
+                        install_app_data['repo_init'] = 'Cloning with mercurial'
+                        p = Popen(['hg', 'clone', repo_url], stdout=PIPE, stderr=PIPE,  cwd=app_dir)
+                        os.waitpid(p.pid, 0)
+                    else:
+                        log_message(logging.ERROR, app_name, 'Unknown repo type: {0}'.format(repo_type))
+                        p = None
                     if p:
                         p_out, p_err = p.stdout, p.stderr
                         install_app_data['repo_out'] = p_out.read()
                         install_app_data['repo_err'] = p_out.read()
+                    # checkout revision if needed
+                    if repo_revision:
+                        log_message(logging.INFO, app_name, 'Checking out revision {0}'.format(repo_revision))
+                        if repo_type == 'git':
+                            p = Popen(['git', 'checkout', repo_revision], stdout=PIPE, stderr=PIPE, cwd=app_dir)
+                        elif repo_type == 'hg':
+                            p = Popen(['hg', 'checkout', repo_revision], stdout=PIPE, stderr=PIPE, cwd=app_dir)
+                        else:
+                            log_message(logging.ERROR, app_name, 'Unknown repo type: {0}'.format(repo_type))
+                            p = None
+                        if p:
+                            os.waitpid(p.pid, 0)
                 else:
                     log_message(logging.DEBUG, app_name, 'Installing application')
                     app_dir_target = os.path.join(app_dir, app_name)
-                    if os.path.exists(app_dir_target):
-                        shutil.rmtree(app_dir_target)
                     shutil.copytree(tmp_deploy_dir, app_dir_target)
                 output['install_app'] = install_app_data
                 # install ve
-                output['install_virtualenv'] = install_virtualenv(application='demo', packages=pkgs, \
+                output['install_virtualenv'] = install_virtualenv(application=app_name, packages=pkgs, \
                     requirements=reqs, runtime=runtime)
             else:
                 errors['deploy'] = 'invalid package manifest (missing application attribute)'
@@ -128,12 +153,14 @@ def install_virtualenv(application=None, packages=None, requirements=None, runti
     if not os.path.exists(ve_target_dir):
         log_message(logging.DEBUG, application, 'Creating virtualenv in {0}'.format(ve_target_dir))
         if runtime:
-            p = Popen(['which {0}'.format(runtime)], stdout=PIPE, stderr=PIPE, shell=True)
-            (p_out, p_err) = (p.stdout, p.stderr)
-            runtime_path = '/usr/local/bin/python2.6'
+            p = Popen(['bash which {0}'.format(runtime)], stdout=PIPE, stderr=PIPE, shell=True)
+            p_out, p_err = p.stdout, p.stderr
+            runtime_path = p_out.read()
             p = Popen(['virtualenv', '--no-site-packages', '-p', runtime_path, ve_target_dir], stdout=PIPE, stderr=PIPE)
+            os.waitpid(p.pid, 0)
         else:
             p = Popen(['virtualenv', '--no-site-packages', ve_target_dir], stdout=PIPE, stderr=PIPE)
+            os.waitpid(p.pid, 0)
         (p_out, p_err) = (p.stdout, p.stderr)
         out = p_out.read()
         err = p_err.read()
@@ -143,6 +170,7 @@ def install_virtualenv(application=None, packages=None, requirements=None, runti
     for pkg in packages:
         log_message(logging.DEBUG, application, 'Installing {0} in {1}'.format(pkg, ve_target_dir))
         p = Popen([os.path.join(os.path.join(ve_target_dir, 'bin'), 'pip'), 'install', '--use-mirrors', pkg], stdout=PIPE, stderr=PIPE)
+        os.waitpid(p.pid, 0)
         (p_out, p_err) = (p.stdout, p.stderr)
         out = p_out.read()
         err = p_err.read()
@@ -151,6 +179,7 @@ def install_virtualenv(application=None, packages=None, requirements=None, runti
     if requirements and os.path.exists(requirements):
         log_message(logging.DEBUG, application, 'Installing packages via {0} requirements file in {1}'.format(requirements, ve_target_dir))
         p = Popen([os.path.join(os.path.join(ve_target_dir, 'bin'), 'pip'), 'install', '--use-mirrors', '-r', requirements], stdout=PIPE, stderr=PIPE)
+        os.waitpid(p.pid, 0)
         (p_out, p_err) = (p.stdout, p.stderr)
         out = p_out.read()
         err = p_err.read()

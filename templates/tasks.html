@@ -18,7 +18,7 @@
           <th></th>
         </tr>
       </thead>
-      {% for task in tasks|sort(attribute='date') %}
+      {% for task in tasks|sort(attribute='date', reverse=True) %}
       <tr>
         <td>
           <dl>
