@@ -46,6 +46,9 @@
   </div>
 </div>
 <script type="text/javascript">
+  function reloadPage() {
+    $(location).attr('href', "{{url_for('logs')}}");
+  }
   $(document).ready(function(){
     $("#logs").tablesorter({ sortList: [[0,1]] });
     $("a.btn.clearlogs").click(function(){
@@ -53,6 +56,8 @@
         $(location).attr('href', (this).getAttribute('data-url'));
       }
     });
+    // reload page every 5 seconds
+    setTimeout(reloadPage, 5000);
   });
 </script>
 {% endblock %}

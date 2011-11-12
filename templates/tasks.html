@@ -24,7 +24,9 @@
           <dl>
             <dt>{{task.key}}</dt>
             <dd>{{task.status}}</dd>
+            {% if task.results %}
             <dd>{{task.results}}</dd>
+            {% endif %}
           </dl>
         </td>
         <td width="10%">

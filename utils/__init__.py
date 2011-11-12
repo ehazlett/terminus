@@ -18,6 +18,21 @@ def create_user(username=None, email=None, password=None, role=None, enabled=Tru
     db.set(user_key, json.dumps(data))
     return True
 
+def get_user(username=None):
+    if not username:
+        raise NameError('You must specify a username')
+    db = application.get_db_connection()
+    user_key = schema.USER_KEY.format(username)
+    return db.get(user_key)
+
+def delete_user(username=None):
+    if not username:
+        raise NameError('You must specify a username')
+    db = application.get_db_connection()
+    user_key = schema.USER_KEY.format(username)
+    db.delete(user_key)
+    return True
+
 def create_role(rolename=None):
     if not rolename:
         raise NameError('You must specify a rolename')
@@ -27,13 +42,12 @@ def create_role(rolename=None):
     db.set(role_key, json.dumps(data))
     return True
 
-def delete_user(username=None):
-    if not username:
-        raise NameError('You must specify a username')
+def get_role(rolename=None):
+    if not rolename:
+        raise NameError('You must specify a rolename')
     db = application.get_db_connection()
-    user_key = schema.USER_KEY.format(username)
-    db.delete(user_key)
-    return True
+    role_key = schema.ROLE_KEY.format(rolename)
+    return db.get(role_key)
 
 def delete_role(rolename=None):
     if not rolename:
