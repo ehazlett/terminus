@@ -16,7 +16,7 @@ class DelayedResult(object):
     @property
     def return_value(self):
         if self._rv is None:
-            rv = self.db.get(self.key)
+            rv = self.db.get('{0}:{1}'.format(self.key))
             if rv is not None:
                 self._rv = pickle.loads(rv)
         return self._rv
@@ -27,9 +27,9 @@ def task(f):
         qkey = settings.TASK_QUEUE_NAME
         task_id = str(uuid.uuid4())
         key = '{0}:{1}'.format(qkey, task_id)
-        s = pickle.dumps((f, key, args, kwargs))
+        s = pickle.dumps((f, task_id, args, kwargs))
         db.rpush(settings.TASK_QUEUE_NAME, s)
-        return DelayedResult(key)
+        return DelayedResult(task_id)
     f.delay = delay
     return f
 
@@ -38,8 +38,11 @@ def queue_daemon(app, rv_ttl=settings.TASK_QUEUE_KEY_TTL):
     while True:
         msg = db.blpop(settings.TASK_QUEUE_NAME)
         print('Running task: {0}'.format(msg))
-        func, key, args, kwargs = pickle.loads(msg[1])
-        data = {'date': time.time(), 'key': key, 'status': 'running', 'result': None}
+        func, task_id, args, kwargs = pickle.loads(msg[1])
+        qkey = settings.TASK_QUEUE_NAME
+        key = '{0}:{1}'.format(qkey, task_id)
+        print(key)
+        data = {'date': time.time(), 'task_id': task_id, 'status': 'running', 'result': None}
         db.set(key, json.dumps(data))
         try:
             rv = func(*args, **kwargs)

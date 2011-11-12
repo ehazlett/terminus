@@ -226,7 +226,7 @@ def clear_logs():
 
 
 # ----- API -----
-@app.route("/api/<action>", methods=['GET', 'POST'])
+@app.route("/api/manage/<action>", methods=['GET', 'POST'])
 @api_key_required
 def api(action=None):
     data = {}
