@@ -14,6 +14,7 @@ import sys
 import settings
 from optparse import OptionParser
 from getpass import getpass
+import tempfile
 from datetime import datetime
 import redis
 import utils
@@ -232,7 +233,10 @@ def api(action=None):
         return jsonify({'name': app.config['APP_NAME'], 'version': app.config['VERSION']})
     elif action.lower() == 'deploy':
         data = {}
-        data['task_id'] = deploy.deploy_app.delay('testpackage').key
+        f = request.files['package']
+        pkg_name = tempfile.mktemp()
+        f.save(pkg_name)
+        data['task_id'] = deploy.deploy_app.delay(pkg_name).key
         return jsonify(data)
 
 # ----- END API -----

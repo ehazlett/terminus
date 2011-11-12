@@ -18,11 +18,12 @@
           <th></th>
         </tr>
       </thead>
-      {% for task in tasks %}
+      {% for task in tasks|sort(attribute='date') %}
       <tr>
         <td>
           <dl>
-            <dt>{{task.key}}</dt>
+            <dt>{{task.date|datefromtime}}</dt>
+            <dd>{{task.key}}</dd>
             <dd>{{task.status}}</dd>
             {% if task.results %}
             <dd>{{task.results}}</dd>
