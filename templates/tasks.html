@@ -2,6 +2,11 @@
 {% block page_header %}tasks{% endblock %}
 
 {% block main_content %}
+<div class="row pull-right">
+  <div class="span3 well">
+    <a href="#" data-url="{{url_for('delete_all_tasks')}}" class="btn deletealltasks error">Delete All Tasks</a>
+  </div>
+</div>
 <div class="row">
   <div class="span14">
     {% if tasks %}
@@ -19,6 +24,7 @@
           <dl>
             <dt>{{task.key}}</dt>
             <dd>{{task.status}}</dd>
+            <dd>{{task.output}}</dd>
           </dl>
         </td>
         <td width="10%">
@@ -43,6 +49,11 @@
   $(document).ready(function(){
     $("#tasks a.btn").click(function() {
       if (confirm('Are you sure you want to delete the task?')) {
+        $(location).attr('href', (this).getAttribute('data-url'));
+      }
+    });
+    $("a.btn.deletealltasks").click(function(){
+      if (confirm('Are you sure you want to delete all tasks?')) {
         $(location).attr('href', (this).getAttribute('data-url'));
       }
     });

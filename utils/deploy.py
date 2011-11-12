@@ -13,6 +13,11 @@ def deploy_app(package=None):
 
     """
     log_message(logging.INFO, 'root', 'Deploying package {0}'.format(package))
+    data = {
+        "status": "complete",
+        "operation": "deploy_app",
+    }
+    return data
 
 def install_virtualenv(application=None, packages=None):
     """
@@ -25,6 +30,11 @@ def install_virtualenv(application=None, packages=None):
 
     """
     log_message(logging.INFO, application, 'Installing virtualenv for {0}'.format(application))
+    data = {
+        "status": "complete",
+        "operation": "install_virtualenv",
+    }
+    return data
 
 def configure_appserver(application=None):
     """
@@ -34,6 +44,11 @@ def configure_appserver(application=None):
 
     """
     log_message(logging.INFO, application, 'Configuring app server for {0}'.format(application))
+    data = {
+        "status": "complete",
+        "operation": "configure_appserver",
+    }
+    return data
 
 def configure_supervisor(application=None):
     """
@@ -43,4 +58,8 @@ def configure_supervisor(application=None):
 
     """
     log_message(logging.INFO, application, 'Configuring supervisor for {0}'.format(application))
-
+    data = {
+        "status": "complete",
+        "operation": "configure_supervisor",
+    }
+    return data

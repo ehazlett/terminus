@@ -46,7 +46,11 @@ def queue_daemon(app, rv_ttl=settings.TASK_QUEUE_KEY_TTL):
         except Exception, e:
             rv = e
             data['status'] = 'error'
-        data['output'] = str(rv)
+        if isinstance(rv, dict):
+            rv = json.dumps(rv)
+        else:
+            rv = str(rv)
+        data['output'] = rv
         if rv is not None:
             db.set(key, json.dumps(data))
             db.expire(key, rv_ttl)

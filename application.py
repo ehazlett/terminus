@@ -95,7 +95,6 @@ def logout():
 def accounts():
     users = [json.loads(g.db.get(x)) for x in g.db.keys(schema.USER_KEY.format('*'))]
     roles = [json.loads(g.db.get(x)) for x in g.db.keys(schema.ROLE_KEY.format('*'))]
-    print(users)
     ctx = {
         'users': users,
         'roles': roles,
@@ -185,6 +184,15 @@ def delete_task(task_id):
             [g.db.lpush(app.config['TASK_QUEUE_NAME'], x) for x in post]
             [g.db.lpush(app.config['TASK_QUEUE_NAME'], x) for x in pre]
     flash('Task deleted...', 'success')
+    return redirect(url_for('tasks'))
+
+@app.route("/tasks/deleteall/")
+@admin_required
+def delete_all_tasks():
+    g.db.delete(app.config['TASK_QUEUE_NAME'])
+    for k in g.db.keys('{0}:*'.format(app.config['TASK_QUEUE_NAME'])):
+        g.db.delete(k)
+    flash('All tasks removed...', 'success')
     return redirect(url_for('tasks'))
 
 # ----- API -----
