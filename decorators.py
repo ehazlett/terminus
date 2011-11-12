@@ -33,10 +33,16 @@ def login_required(f):
 def api_key_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if 'apikey' not in request.form:
+        api_key = None
+        if 'apikey' in request.form:
+            api_key = request.form['apikey']
+        elif 'X-Apikey' in request.headers.keys():
+            api_key = request.headers['X-Apikey']
+        # validate
+        if not api_key:
             data = {'error': messages.NO_API_KEY}
             return jsonify(data)
-        if request.form['apikey'] not in current_app.config['API_KEYS']:
+        if api_key not in current_app.config['API_KEYS']:
             data = {'error': messages.INVALID_API_KEY}
             return jsonify(data)
         return f(*args, **kwargs)

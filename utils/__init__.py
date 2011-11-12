@@ -83,3 +83,11 @@ def encrypt_password(password=None, salt=None):
     h = hashlib.sha256(salt)
     h.update(password+salt)
     return h.hexdigest()
+
+def get_task(task_id=None):
+    if not task_id:
+       raise NameError('You must specify a task id')
+    db = application.get_db_connection()
+    task_key = '{0}:{1}'.format(settings.TASK_QUEUE_NAME, task_id)
+    print(task_key)
+    return db.get(task_key)

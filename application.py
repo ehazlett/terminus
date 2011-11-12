@@ -229,16 +229,36 @@ def clear_logs():
 @app.route("/api/<action>", methods=['GET', 'POST'])
 @api_key_required
 def api(action=None):
-    if action.lower() == 'version':
-        return jsonify({'name': app.config['APP_NAME'], 'version': app.config['VERSION']})
-    elif action.lower() == 'deploy':
-        data = {}
-        f = request.files['package']
-        pkg_name = tempfile.mktemp()
-        f.save(pkg_name)
-        data['task_id'] = deploy.deploy_app.delay(pkg_name).key
-        return jsonify(data)
+    data = {}
+    try:
+        if action.lower() == 'version':
+            return jsonify({'name': app.config['APP_NAME'], 'version': app.config['VERSION']})
+        elif action.lower() == 'deploy':
+            data = {}
+            f = request.files['package']
+            pkg_name = tempfile.mktemp()
+            f.save(pkg_name)
+            data['task_id'] = deploy.deploy_app.delay(pkg_name).key
+        else:
+            data['status'] = 'error'
+            data['result'] = 'unknown action'
+    except Exception, e:
+        data = {'status': 'error', 'result': str(e)}
+    return jsonify(data)
 
+@app.route("/api/task/<task_id>/", methods=['GET', 'POST'])
+@api_key_required
+def api_task(task_id=None):
+    try:
+        task = utils.get_task(task_id)
+        try:
+            data = json.loads(task)
+        except Exception, e:
+            print(e)
+            data = {'status': 'error', 'result': 'invalid task'}
+    except Exception, e:
+        data = {'status': 'error', 'result': str(e)}
+    return jsonify(data)
 # ----- END API -----
 
 # ----- management commands -----

@@ -39,7 +39,7 @@ def queue_daemon(app, rv_ttl=settings.TASK_QUEUE_KEY_TTL):
         msg = db.blpop(settings.TASK_QUEUE_NAME)
         print('Running task: {0}'.format(msg))
         func, key, args, kwargs = pickle.loads(msg[1])
-        data = {'date': time.time(), 'key': key, 'status': 'running', 'results': None}
+        data = {'date': time.time(), 'key': key, 'status': 'running', 'result': None}
         db.set(key, json.dumps(data))
         try:
             rv = func(*args, **kwargs)
@@ -51,7 +51,7 @@ def queue_daemon(app, rv_ttl=settings.TASK_QUEUE_KEY_TTL):
             rv = json.dumps(rv)
         else:
             rv = str(rv)
-        data['results'] = rv
+        data['result'] = rv
         if rv is not None:
             db.set(key, json.dumps(data))
             db.expire(key, rv_ttl)
