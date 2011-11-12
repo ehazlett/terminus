@@ -15,11 +15,13 @@ except ImportError:
     import json
 
 @task
-def deploy_app(package=None):
+def deploy_app(package=None, build_ve=True, force_rebuild_ve=False):
     """
     Deploys application
 
     :keyword package: Package to deploy (as tar.gz)
+    :keyword build_ve: Builds virtualenv for app
+    :keyword force_rebuild_ve: Forces a rebuild of the virtualenv (destroys existing)
 
     """
     log_message(logging.INFO, 'root', 'Deploying package {0}'.format(package))
@@ -111,8 +113,9 @@ def deploy_app(package=None):
                     shutil.copytree(tmp_deploy_dir, app_dir_target)
                 output['install_app'] = install_app_data
                 # install ve
-                output['install_virtualenv'] = install_virtualenv(application=app_name, packages=pkgs, \
-                    requirements=reqs, runtime=runtime)
+                if build_ve:
+                    output['install_virtualenv'] = install_virtualenv(application=app_name, packages=pkgs, \
+                        requirements=reqs, runtime=runtime, force=force_rebuild_ve)
             else:
                 errors['deploy'] = 'invalid package manifest (missing application attribute)'
         else:
@@ -132,7 +135,8 @@ def deploy_app(package=None):
     }
     return data
 
-def install_virtualenv(application=None, packages=None, requirements=None, runtime=None):
+def install_virtualenv(application=None, packages=None, requirements=None, \
+    runtime=None, force=False):
     """
     Installs virtualenv for application
 
@@ -142,6 +146,7 @@ def install_virtualenv(application=None, packages=None, requirements=None, runti
     :keyword packages: List of packages to install
     :keyword requirements: (optional) Path to requirements.txt file
     :keyword runtime: (optional) Python runtime to use
+    :keyword force: (optional) Forces build of virtualenv (destroys existing)
 
     """
     log_message(logging.INFO, application, 'Installing virtualenv for {0}'.format(application))
@@ -149,6 +154,9 @@ def install_virtualenv(application=None, packages=None, requirements=None, runti
     output = {}
     # get ve target dir
     ve_target_dir = os.path.join(settings.VIRTUALENV_BASE_DIR, application)
+    if force and os.path.exists(ve_target_dir):
+        log_message(logging.WARN, application, 'Removing existing virtualenv')
+        shutil.rmtree(ve_target_dir)
     # create if needed
     if not os.path.exists(ve_target_dir):
         log_message(logging.DEBUG, application, 'Creating virtualenv in {0}'.format(ve_target_dir))

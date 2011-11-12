@@ -23,7 +23,7 @@
       {% for log in logs %}
       <tr>
         <td>{{log.date|datefromtime}}</td>
-        <td>
+        <td width="10%">
           {% if log.level == 10 %}
           <span class="label">debug</span>
           {% elif log.level == 20 %}
@@ -36,7 +36,7 @@
           <span class="label">unknown</span>
           {% endif %}
         </td>
-        <td>{{log.category}}</td>
+        <td width="15%">{{log.category}}</td>
         <td>{{log.message}}</td>
       </tr>
       {% endfor %}

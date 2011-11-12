@@ -6,6 +6,7 @@ import shutil
 from random import Random
 import string
 from subprocess import call, Popen, PIPE
+import tarfile
 import application
 import settings
 import utils
@@ -60,6 +61,38 @@ class CoreTestCase(unittest.TestCase):
 class DeployTestCase(unittest.TestCase):
     def setUp(self):
         pass
+
+    def test_deploy_app(self):
+        tmp_app_name = get_random_string()
+        tmp_app_file = tempfile.mktemp()
+        with open(tmp_app_file, 'w') as f:
+            f.write('testing')
+        # create temp manifest
+        tmp_manifest = tempfile.mktemp()
+        with open(tmp_manifest, 'w') as f:
+            data = {"application": tmp_app_name, "version": "test"}
+            f.write(json.dumps(data))
+        # create package
+        tmp_pkg = tempfile.mktemp()
+        tf = tarfile.open(tmp_pkg, 'w:gz')
+        tf.add(tmp_manifest, arcname='manifest.json')
+        tf.add(tmp_app_file, arcname='testfile')
+        tf.close()
+        # deploy
+        deploy.deploy_app(package=tmp_pkg, build_ve=False)
+        tmp_app_dir = os.path.join(settings.APPLICATION_BASE_DIR, tmp_app_name)
+        assert os.path.exists(os.path.join(settings.APPLICATION_BASE_DIR, tmp_app_name))
+        assert os.listdir(os.path.join(tmp_app_dir, tmp_app_name)) > 0
+        assert os.path.exists(os.path.join(os.path.join(tmp_app_dir, tmp_app_name), 'testfile'))
+        # cleanup
+        if os.path.exists(tmp_app_file):
+            os.remove(tmp_app_file)
+        if os.path.exists(tmp_manifest):
+            os.remove(tmp_manifest)
+        if os.path.exists(tmp_pkg):
+            os.remove(tmp_pkg)
+        if os.path.exists(tmp_app_dir):
+            shutil.rmtree(tmp_app_dir)
 
     def test_install_virtualenv(self):
         tmp_ve = get_random_string()
