@@ -3,8 +3,9 @@
 
 {% block main_content %}
 <div class="row pull-right">
-  <div class="span3 well">
+  <div class="span4 well">
     <a href="#" data-url="{{url_for('clear_logs')}}" class="btn clearlogs">Clear All Logs</a>
+    <a href="{{url_for('logs')}}" class="btn info">Refresh</a>
   </div>
 </div>
 <div class="row">
@@ -57,7 +58,7 @@
       }
     });
     // reload page every 5 seconds
-    setTimeout(reloadPage, 5000);
+    //setTimeout(reloadPage, 5000);
   });
 </script>
 {% endblock %}

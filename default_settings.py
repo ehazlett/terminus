@@ -20,6 +20,7 @@ DB_NAME = 0
 DB_USER = '<DBUSER>'
 DB_PASSWORD = '<DBPASS>'
 SECRET_KEY = "<SECRET_KEY>"
+SUPERVISOR_CONF_DIR = '/etc/supervisor/conf.d'
 # queue settings
 TASK_QUEUE_NAME = 'queue'
 TASK_QUEUE_KEY_TTL = 86400

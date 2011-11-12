@@ -2,6 +2,7 @@
 import logging
 import os
 from subprocess import call, Popen, PIPE
+import shutil
 import settings
 import tempfile
 import uuid
@@ -22,6 +23,7 @@ def deploy_app(package=None):
     tmp_deploy_dir = tempfile.mkdtemp()
     # install ve
     output['install_virtualenv'] = install_virtualenv('demo', ['django'])
+    shutil.rmtree(tmp_deploy_dir)
     data = {
         "status": "complete",
         "output": output,
@@ -114,8 +116,13 @@ def configure_supervisor(application=None):
 
     """
     log_message(logging.INFO, application, 'Configuring supervisor for {0}'.format(application))
+    errors = {}
+    output = {}
+    
     data = {
         "status": "complete",
+        "output": output,
+        "errors": errors,
         "operation": "configure_supervisor",
     }
     return data
