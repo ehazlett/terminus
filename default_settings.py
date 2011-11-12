@@ -19,12 +19,13 @@ DB_PORT = 6379
 DB_NAME = 0
 DB_USER = '<DBUSER>'
 DB_PASSWORD = '<DBPASS>'
+SECRET_KEY = "<SECRET_KEY>"
 # queue settings
 TASK_QUEUE_NAME = 'queue'
 TASK_QUEUE_KEY_TTL = 86400
 # app version
 VERSION = '0.1'
-SECRET_KEY = "<SECRET_KEY>"
+VIRTUALENV_BASE_DIR = '/var/tmp/ve'
 
 try:
     from local_settings import *

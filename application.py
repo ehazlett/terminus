@@ -191,7 +191,7 @@ def delete_task(task_id):
             g.db.delete(app.config['TASK_QUEUE_NAME'])
             [g.db.lpush(app.config['TASK_QUEUE_NAME'], x) for x in post]
             [g.db.lpush(app.config['TASK_QUEUE_NAME'], x) for x in pre]
-    flash('Task deleted...', 'success')
+    flash('Task deleted...', 'info')
     return redirect(url_for('tasks'))
 
 @app.route("/tasks/deleteall/")
@@ -200,7 +200,7 @@ def delete_all_tasks():
     g.db.delete(app.config['TASK_QUEUE_NAME'])
     for k in g.db.keys('{0}:*'.format(app.config['TASK_QUEUE_NAME'])):
         g.db.delete(k)
-    flash('All tasks removed...', 'success')
+    flash('All tasks removed...', 'info')
     return redirect(url_for('tasks'))
 
 @app.route("/logs/")
@@ -220,7 +220,7 @@ def logs():
 def clear_logs():
     for k in g.db.keys(schema.LOG_KEY.format('*')):
         g.db.delete(k)
-    flash('Logs cleared...', 'success')
+    flash('Logs cleared...', 'info')
     return redirect(url_for('logs'))
 
 
