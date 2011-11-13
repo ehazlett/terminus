@@ -254,7 +254,6 @@ def api_task(task_id=None):
         try:
             data = json.loads(task)
         except Exception, e:
-            print(e)
             data = {'status': 'error', 'result': 'invalid task'}
     except Exception, e:
         data = {'status': 'error', 'result': str(e)}

@@ -161,10 +161,12 @@ def install_virtualenv(application=None, packages=None, requirements=None, \
     if not os.path.exists(ve_target_dir):
         log_message(logging.DEBUG, application, 'Creating virtualenv in {0}'.format(ve_target_dir))
         if runtime:
-            p = Popen(['bash which {0}'.format(runtime)], stdout=PIPE, stderr=PIPE, shell=True)
+            log_message(logging.DEBUG, application, 'Runtime {0} specified'.format(runtime))
+            p = Popen(['which {0}'.format(runtime)], stdout=PIPE, stderr=PIPE, shell=True)
             p_out, p_err = p.stdout, p.stderr
             runtime_path = p_out.read()
-            p = Popen(['virtualenv', '--no-site-packages', '-p', runtime_path, ve_target_dir], stdout=PIPE, stderr=PIPE)
+            log_message(logging.DEBUG, application, 'Using runtime {0}'.format(runtime_path))
+            p = Popen(['virtualenv', '--no-site-packages', '-p', runtime, ve_target_dir], stdout=PIPE, stderr=PIPE)
             os.waitpid(p.pid, 0)
         else:
             p = Popen(['virtualenv', '--no-site-packages', ve_target_dir], stdout=PIPE, stderr=PIPE)

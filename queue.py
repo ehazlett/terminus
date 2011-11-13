@@ -41,7 +41,6 @@ def queue_daemon(app, rv_ttl=settings.TASK_QUEUE_KEY_TTL):
         func, task_id, args, kwargs = pickle.loads(msg[1])
         qkey = settings.TASK_QUEUE_NAME
         key = '{0}:{1}'.format(qkey, task_id)
-        print(key)
         data = {'date': time.time(), 'task_id': task_id, 'status': 'running', 'result': None}
         db.set(key, json.dumps(data))
         try:
