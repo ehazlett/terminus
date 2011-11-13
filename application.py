@@ -16,6 +16,8 @@ from optparse import OptionParser
 from getpass import getpass
 import tempfile
 from datetime import datetime
+from random import Random
+import string
 import redis
 import utils
 from utils import deploy
@@ -276,6 +278,15 @@ def api_task(task_id=None):
     except Exception, e:
         data = {'status': 'error', 'result': str(e)}
     return jsonify(data)
+
+@app.route("/api/generateapikey/")
+@login_required
+def api_generate_apikey():
+    data = {
+        "key": ''.join(Random().sample(string.letters+string.digits, 32)),
+    }
+    return jsonify(data)
+
 # ----- END API -----
 
 # ----- management commands -----
