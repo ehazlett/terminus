@@ -271,9 +271,11 @@ def configure_supervisor(application=None, uwsgi_args={}):
     uwsgi_config += 'user={0}\n'.format(settings.APPLICATION_USER)
     uwsgi_config += 'stopsignal=QUIT\n'
     output['uwsgi_config'] = uwsgi_config
-
+    # create config
     with open(supervisor_conf, 'w') as f:
         f.write(uwsgi_config)
+    # signal supervisor to update
+    call('supervisorctl update')
     data = {
         "status": "complete",
         "output": output,

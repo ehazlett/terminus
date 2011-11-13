@@ -32,8 +32,8 @@ APPLICATION_BASE_DIR = '/var/tmp/apps'
 APPLICATION_USER = 'www-data'
 APPLICATION_GROUP = 'www-data'
 VIRTUALENV_BASE_DIR = '/var/tmp/ve'
-SUPERVISOR_CONF_DIR = '/etc/supervisor/conf.d'
-WEBSERVER_CONF_DIR = '/etc/nginx/conf.d'
+SUPERVISOR_CONF_DIR = '/var/tmp/supervisor'
+WEBSERVER_CONF_DIR = '/var/tmp/nginx'
 
 try:
     from local_settings import *

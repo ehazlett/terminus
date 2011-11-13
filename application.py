@@ -13,6 +13,7 @@ import logging
 import sys
 import settings
 from optparse import OptionParser
+from subprocess import call, Popen, PIPE
 from getpass import getpass
 import tempfile
 from datetime import datetime
@@ -21,6 +22,7 @@ import string
 import redis
 import utils
 from utils import deploy
+from utils.log import log_message
 import queue
 import schema
 import messages
@@ -323,6 +325,67 @@ def toggle_user(active):
     except KeyboardInterrupt:
         pass
 
+def generate_supervisor_conf():
+    """
+    Generates the supervisord config
+
+    """
+    conf = '; {0} supervisor config\n\n'.format(settings.APP_NAME)
+    conf += '[unix_http_server]\n'
+    conf += 'file={0}\n\n'.format(os.path.join(settings.SUPERVISOR_CONF_DIR, 'supervisor.sock'))
+    conf += '[supervisord]\n'
+    conf += 'logfile={0}\n'.format(os.path.join(settings.SUPERVISOR_CONF_DIR, 'supervisord.log'))
+    conf += 'logfile_maxbytes=50MB\n'
+    conf += 'logfile_backups=5\n'
+    conf += 'loglevel=info\n'
+    conf += 'pidfile={0}\n'.format(os.path.join(settings.SUPERVISOR_CONF_DIR, 'supervisord.pid'))
+    conf += 'nodaemon=false\n\n'
+    conf += '[rpcinterface:supervisor]\n'
+    conf += 'supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface\n\n'
+    conf += '[supervisorctl]\n'
+    conf += 'serverurl=unix://{0}\n\n'.format(os.path.join(settings.SUPERVISOR_CONF_DIR, \
+        'supervisor.sock'))
+    conf += '[include]\n'
+    conf += 'files = {0}/*.conf\n'.format(settings.SUPERVISOR_CONF_DIR)
+    with open('supervisord.conf', 'w') as f:
+        f.write(conf)
+    
+def start_supervisor():
+    """
+    Starts supervisor
+
+    """
+    generate_supervisor_conf()
+    # check for existing pid
+    pid_file = os.path.join(settings.SUPERVISOR_CONF_DIR, 'supervisord.pid')
+    sock_file = os.path.join(settings.SUPERVISOR_CONF_DIR, 'supervisor.sock')
+    if os.path.exists(pid_file):
+        log_message(logging.DEBUG, 'supervisord', 'Stopping supervisord')
+        with open(pid_file, 'r') as f:
+            pid = f.read().strip()
+        try:
+            if pid != '':
+                os.kill(int(pid), 9)
+                # remove socket
+        except Exception, e:
+            log_message(logging.WARN, 'root', str(e))
+    if os.path.exists(sock_file):
+        os.remove(sock_file)
+    # start
+    log_message(logging.DEBUG, 'supervisord', 'Starting supervisord')
+    p = Popen(['supervisord', '-c', 'supervisord.conf'], stdout=PIPE, stderr=PIPE)
+    p_out, p_err = p.stdout.read().strip(), p.stderr.read().strip()
+    if p_out != '':
+        log_message(logging.DEBUG, 'supervisord', p_out)
+    if p_err != '':
+        log_message(logging.ERROR, 'supervisord', p_err)
+    # write pid if needed
+    if not os.path.exists(pid_file):
+        with open(pid_file, 'w') as f:
+            f.write(p.pid)
+    
+# ----- end management commands -----
+
 if __name__=="__main__":
     op = OptionParser()
     op.add_option('--create-user', dest='create_user', action='store_true', default=False, help='Create/update user')
@@ -339,6 +402,8 @@ if __name__=="__main__":
     if opts.disable_user:
         toggle_user(False)
         sys.exit(0)
+    # start supervisor
+    start_supervisor()
     # run app
     app.run()
 
