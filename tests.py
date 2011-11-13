@@ -136,6 +136,25 @@ class DeployTestCase(unittest.TestCase):
         shutil.rmtree(tmp_ve_path)
         os.remove(tmp_reqs)
 
+    def test_configure_supervisor(self):
+        tmp_app_name = get_random_string()
+        uwsgi_args = {
+            'buffer-size': '8192',
+            'processes': '6',
+            'master': '',
+        }
+        deploy.configure_supervisor(application=tmp_app_name, uwsgi_args=uwsgi_args)
+        uwsgi_config = os.path.join(settings.SUPERVISOR_CONF_DIR, 'uwsgi_{0}.conf'.format(tmp_app_name))
+        assert os.path.exists(uwsgi_config)
+        with open(uwsgi_config, 'r') as f:
+            cfg = f.read()
+        assert cfg.find('[program:uwsgi_{0}]'.format(tmp_app_name)) > -1
+        assert cfg.find('--buffer-size 8192') > -1
+        assert cfg.find('--processes 6') > -1
+        assert cfg.find('--master') > -1
+        # cleanup
+        os.remove(uwsgi_config)
+
     def tearDown(self):
         pass
 

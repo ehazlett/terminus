@@ -240,7 +240,7 @@ def configure_webserver(application=None):
     }
     return data
 
-def configure_supervisor(application=None):
+def configure_supervisor(application=None, uwsgi_args={}):
     """
     Configures supervisord
 
@@ -250,7 +250,30 @@ def configure_supervisor(application=None):
     log_message(logging.INFO, application, 'Configuring supervisor for {0}'.format(application))
     errors = {}
     output = {}
-    
+    # generate uwsgi config
+    supervisor_conf = os.path.join(settings.SUPERVISOR_CONF_DIR, 'uwsgi_{0}.conf'.format(application))
+    uwsgi_config = '[program:uwsgi_{0}]\n'.format(application)
+    uwsgi_config += 'command=/usr/local/bin/uwsgi\n'
+    # defaults
+    uwsgi_config += '  --uid {0}\n'.format(settings.APPLICATION_USER)
+    uwsgi_config += '  --gid {0}\n'.format(settings.APPLICATION_GROUP)
+    uwsgi_config += '  -s {0}/{1}.sock\n'.format(os.path.join(settings.APPLICATION_BASE_DIR, application), application)
+    uwsgi_config += '  -H {0}\n'.format(os.path.join(settings.VIRTUALENV_BASE_DIR, application))
+    uwsgi_config += '  --no-orphans\n'
+    uwsgi_config += '  --vacuum\n'
+    uwsgi_config += '  --harakiri 300\n'
+    uwsgi_config += '  --max-requests 5000\n'
+    # uwsgi args
+    for k,v in uwsgi_args.iteritems():
+        uwsgi_config += '  --{0} {1}\n'.format(k, v)
+    uwsgi_config += 'directory={0}\n'.format(os.path.join(settings.APPLICATION_BASE_DIR, \
+        application))
+    uwsgi_config += 'user={0}\n'.format(settings.APPLICATION_USER)
+    uwsgi_config += 'stopsignal=QUIT\n'
+    output['uwsgi_config'] = uwsgi_config
+
+    with open(supervisor_conf, 'w') as f:
+        f.write(uwsgi_config)
     data = {
         "status": "complete",
         "output": output,
@@ -258,3 +281,4 @@ def configure_supervisor(application=None):
         "operation": "configure_supervisor",
     }
     return data
+
