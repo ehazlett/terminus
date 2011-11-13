@@ -99,6 +99,24 @@ def logout():
         flash(messages.LOGGED_OUT)
     return redirect(url_for('index'))
 
+@app.route("/account/", methods=['GET', 'POST'])
+@login_required
+def account():
+    if 'user' in session:
+        user_key = schema.USER_KEY.format(session['user'])
+        account = json.loads(utils.get_user(session['user']))
+        if request.method == 'GET':
+            ctx = {
+                'account': account,
+            }
+            return render_template('account.html', **ctx)
+        else:
+            for k in request.form:
+                account[k] = request.form[k]
+            g.db.set(user_key, json.dumps(account))
+            flash(messages.ACCOUNT_UPDATED, 'success')
+    return redirect(url_for('account'))
+
 @app.route("/accounts/")
 @admin_required
 def accounts():
@@ -108,7 +126,7 @@ def accounts():
         'users': users,
         'roles': roles,
     }
-    return render_template('users.html', **ctx)
+    return render_template('accounts.html', **ctx)
 
 @app.route("/accounts/adduser/", methods=['POST'])
 @admin_required

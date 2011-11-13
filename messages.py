@@ -1,4 +1,5 @@
 ACCESS_DENIED = 'Access denied'
+ACCOUNT_UPDATED = 'Account updated.'
 ERROR_DELETING_USER = 'Error during user deletion.'
 ERROR_DELETING_ROLE = 'Error during role deletion.'
 ERROR_DISABLING_USER = 'Error disabling user.'

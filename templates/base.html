@@ -52,10 +52,13 @@
           {% if session.user %}
           <ul class="nav secondary-nav pull-right">
             <li class="dropdown" data-dropdown="dropdown">
-              <a href="#" class="dropdown-toggle">{{session.user}}</a>
+              <a href="" class="dropdown-toggle">{{session.user}}</a>
               <ul class="dropdown-menu">
+                <li><a href="{{url_for('account')}}">account</a></li>
                 {% if session.role == 'admin' %}
+                <li class="divider"></li>
                 <li><a href="{{ url_for('accounts') }}">accounts</a></li>
+                <li class="divider"></li>
                 {% endif %}
                 <li><a href="{{ url_for('logout') }}">logout</a></li>
               </ul>

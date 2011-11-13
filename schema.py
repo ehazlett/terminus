@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 import time
+import settings
 
 USER_KEY = 'users:{0}'
 ROLE_KEY = 'roles:{0}'
-LOG_KEY = 'logs:{0}'
+LOG_KEY = 'logs:{0}:'.format(settings.NODE_NAME) + '{0}'
 
 def user(username=None, first_name=None, last_name=None, email=None, \
     password=None, role=None, enabled=True):

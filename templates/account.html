@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block page_header %}{{account.username}}{% endblock %}
+
+{% block main_content %}
+<div class="row">
+  <div class="span10 offset2">
+    <form id="account" method="post">
+      <fieldset>
+        <div class="clearfix">
+          <label for="first_name">First Name</label>
+          <div class="input">
+            <input type="text" class="span3" id="first_name" name="first_name" value="{{account.first_name}}"/>
+          </div>
+        </div>
+        <div class="clearfix">
+          <label for="last_name">Last Name</label>
+          <div class="input">
+            <input type="text" class="span3" id="last_name" name="last_name" value="{{account.last_name}}"/>
+          </div>
+        </div>
+        <div class="clearfix">
+          <label for="email">Email</label>
+          <div class="input">
+            <input type="text" class="xlarge" id="email" name="email" size="span4" value="{{account.email}}"/>
+          </div>
+        </div>
+        <div class="clearfix">
+          <label for="apikey">API Key</label>
+          <div class="input">
+            <input type="text" class="xlarge" id="apikey" name="apikey" size="span4" readonly="true" value="{{account.apikey}}"/>
+          </div>
+        </div>
+        <div class="actions">
+          <input type="submit" class="btn primary" value="Save"/>
+          <a class="btn" href="{{url_for('index')}}">Cancel</a>
+        </div>
+      </fieldset>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
