@@ -10,6 +10,7 @@ import tarfile
 import application
 import settings
 import utils
+import schema
 from utils import deploy
 try:
     import simplejson as json
@@ -154,6 +155,28 @@ class DeployTestCase(unittest.TestCase):
         assert cfg.find('--master') > -1
         # cleanup
         os.remove(uwsgi_config)
+
+    def tearDown(self):
+        pass
+
+class UtilsTestCase(unittest.TestCase):
+    def setUp(self):
+        self.db = application.get_db_connection()
+        pass
+    
+    def test_reserve_app_port(self):
+        port = utils.get_next_application_port()
+        assert port != None
+        utils.reserve_application_port(port)
+        ports_key = schema.PORTS_KEY
+        ports = json.loads(self.db.get(ports_key))
+        assert port in ports
+        # cleanup
+        utils.release_application_port(port)
+        ports = self.db.get(ports_key)
+        if ports:
+            ports = json.loads(ports)
+            assert port not in ports
 
     def tearDown(self):
         pass

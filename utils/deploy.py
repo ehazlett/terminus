@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 import logging
 import os
+import traceback
 from subprocess import call, Popen, PIPE
 import shutil
 import settings
 import tempfile
 import uuid
 import tarfile
+import utils
 from queue import task
 from log import log_message
 try:
@@ -38,15 +40,28 @@ def deploy_app(package=None, build_ve=True, force_rebuild_ve=False):
             mdata = json.loads(open(manifest, 'r').read())
             if 'application' in mdata:
                 app_name = mdata['application']
+                # attempt to stop before deploy
+                stop_application(app_name)
+                # get app config
+                app_config = utils.get_application_config(app_name)
+                if app_config:
+                    try:
+                        app_config = json.loads(app_config)
+                    except:
+                        app_config = {}
+                else:
+                    app_config = {}
                 if 'version' in mdata:
                     version = mdata['version']
                     log_message(logging.INFO, app_name, 'Deploying version {0}'.format(version))
                 else:
                     version = None
+                app_config['version'] = version
                 if 'packages' in mdata:
                     pkgs = mdata['packages']
                 else:
                     pkgs = None
+                app_config['packages'] = pkgs
                 if os.path.exists(os.path.join(tmp_deploy_dir, 'requirements.txt')):
                     reqs = os.path.join(tmp_deploy_dir, 'requirements.txt')
                 else:
@@ -55,19 +70,31 @@ def deploy_app(package=None, build_ve=True, force_rebuild_ve=False):
                     runtime = mdata['runtime']
                 else:
                     runtime = None
+                app_config['runtime'] = runtime
                 if 'repo_type' in mdata:
                     repo_type = mdata['repo_type']
                 else:
                     repo_type = None
+                app_config['repo_type'] = repo_type
                 if 'repo_url' in mdata:
                     repo_url = mdata['repo_url'].lower()
                 else:
                     repo_url = None
+                app_config['repo_url'] = repo_url
                 if 'repo_revision' in mdata:
                     repo_revision = mdata['repo_revision']
                 else:
                     repo_revision = None
+                app_config['repo_revision'] = repo_revision
                 log_message(logging.DEBUG, app_name, mdata)
+                # get app port
+                port_reserved = False
+                if 'port' in app_config:
+                    port = app_config['port']
+                    port_reserved = True
+                else:
+                    port = utils.get_next_application_port()
+                    app_config['port'] = port
                 # install app
                 app_dir = os.path.join(settings.APPLICATION_BASE_DIR, app_name)
                 if not os.path.exists(app_dir):
@@ -116,17 +143,30 @@ def deploy_app(package=None, build_ve=True, force_rebuild_ve=False):
                 if build_ve:
                     output['install_virtualenv'] = install_virtualenv(application=app_name, packages=pkgs, \
                         requirements=reqs, runtime=runtime, force=force_rebuild_ve)
+                # configure supervisor
+                output['configure_supervisor'] = configure_supervisor(application=app_name)
+                output['configure_webserver'] = configure_webserver(application=app_name, \
+                    port=port)
+                # update node port list
+                if not port_reserved:
+                    utils.reserve_application_port(port)
+                # update app config
+                utils.update_application_config(app_name, app_config)
+                # restart app
+                restart_application(app_name)
             else:
                 errors['deploy'] = 'invalid package manifest (missing application attribute)'
         else:
             log_message(logging.ERROR, 'root', 'Missing package manifest')
             errors['deploy'] = 'missing package manifest'
     except Exception, e:
-        log_message(logging.ERROR, 'root', 'Deploy: {0}'.format(str(e)))
+        log_message(logging.ERROR, 'root', 'Deploy: {0}'.format(traceback.format_exc()))
+
         errors['deploy'] = str(e)
     # cleanup
     if os.path.exists(tmp_deploy_dir):
         shutil.rmtree(tmp_deploy_dir)
+    log_message(logging.INFO, 'root', 'Deployment for {0} complete'.format(app_name))
     data = {
         "status": "complete",
         "output": output,
@@ -222,16 +262,49 @@ def configure_appserver(application=None):
     }
     return data
 
-def configure_webserver(application=None):
+def configure_webserver(application=None, port=None):
     """
     Configures webserver (current Nginx)
 
     :keyword application: Application to configure
+    :keyword port: Port to use for webserver
 
     """
     log_message(logging.INFO, application, 'Configuring webserver for {0}'.format(application))
     errors = {}
     output = {}
+    app_state_dir = os.path.join(settings.APPLICATION_STATE_DIR, application)
+    # generate nginx config
+    nginx_conf = os.path.join(settings.WEBSERVER_CONF_DIR, 'nginx_{0}.conf'.format(application))
+    conf = '# {0} config for application: {1}\n'.format(settings.APP_NAME, application)
+    conf += 'user {0};\n'.format(settings.APPLICATION_USER)
+    conf += 'worker_processes 1;\n'
+    conf += 'error_log {0};\n'.format(os.path.join(settings.APPLICATION_LOG_DIR, '{0}_{1}-error.log'.format(application, 'nginx')))
+    conf += 'pid {0};\n'.format(os.path.join(app_state_dir, 'nginx_{0}.pid'.format(port)))
+    conf += 'events {\n'
+    conf += '  worker_connections 1024;\n'
+    conf += '}\n'
+    conf += 'http {\n'
+    conf += '  include mime.types;\n'
+    conf += '  default_type application/octet-stream;\n'
+    conf += '  sendfile on;\n'
+    conf += '  keepalive_timeout 65;\n'
+    conf += '  server {\n'
+    conf += '    listen {0};\n'.format(port)
+    conf += '    access_log {0};\n'.format(os.path.join(settings.APPLICATION_LOG_DIR, '{0}_{1}-access.log'.format(application, 'nginx')))
+    conf += '    location /nginx-status {\n'
+    conf += '      stub_status on;\n'
+    conf += '    }\n'
+    conf += '    location / {\n'
+    conf += '      uwsgi_pass unix://{0};\n'.format(os.path.join(app_state_dir, '{0}.sock'.format(application)))
+    conf += '      include uwsgi_params;\n'
+    conf += '    }\n'
+    conf += '  }\n'
+    conf += '}\n'
+    # write config
+    with open(nginx_conf, 'w') as f:
+        f.write(conf)
+    output['nginx_conf'] = conf
     data = {
         "status": "complete",
         "output": output,
@@ -250,19 +323,28 @@ def configure_supervisor(application=None, uwsgi_args={}):
     log_message(logging.INFO, application, 'Configuring supervisor for {0}'.format(application))
     errors = {}
     output = {}
+    app_dir = os.path.join(settings.APPLICATION_BASE_DIR, application)
+    app_state_dir = os.path.join(settings.APPLICATION_STATE_DIR, application)
+    app_local_dir = os.listdir(app_dir)[0]
+    if not os.path.exists(app_state_dir):
+        os.makedirs(app_state_dir)
     # generate uwsgi config
     supervisor_conf = os.path.join(settings.SUPERVISOR_CONF_DIR, 'uwsgi_{0}.conf'.format(application))
     uwsgi_config = '[program:uwsgi_{0}]\n'.format(application)
-    uwsgi_config += 'command=/usr/local/bin/uwsgi\n'
+    uwsgi_config += 'command=uwsgi\n'
     # defaults
     uwsgi_config += '  --uid {0}\n'.format(settings.APPLICATION_USER)
     uwsgi_config += '  --gid {0}\n'.format(settings.APPLICATION_GROUP)
-    uwsgi_config += '  -s {0}/{1}.sock\n'.format(os.path.join(settings.APPLICATION_BASE_DIR, application), application)
+    uwsgi_config += '  -s {0}\n'.format(os.path.join(app_state_dir, '{0}.sock'.format(application)))
     uwsgi_config += '  -H {0}\n'.format(os.path.join(settings.VIRTUALENV_BASE_DIR, application))
+    uwsgi_config += '  -M\n'
+    uwsgi_config += '  -p 2\n'
     uwsgi_config += '  --no-orphans\n'
     uwsgi_config += '  --vacuum\n'
     uwsgi_config += '  --harakiri 300\n'
     uwsgi_config += '  --max-requests 5000\n'
+    uwsgi_config += '  --python-path {0}\n'.format(app_local_dir)
+    uwsgi_config += '  -w wsgi\n'
     # uwsgi args
     for k,v in uwsgi_args.iteritems():
         uwsgi_config += '  --{0} {1}\n'.format(k, v)
@@ -275,7 +357,10 @@ def configure_supervisor(application=None, uwsgi_args={}):
     with open(supervisor_conf, 'w') as f:
         f.write(uwsgi_config)
     # signal supervisor to update
-    call('supervisorctl update')
+    p = Popen(['supervisorctl', 'update'], stdout=PIPE, stderr=PIPE)
+    p_out, p_err = p.stdout.read().strip(), p.stderr.read().strip()
+    output['supervisorctl_out'] = p_out
+    output['supervisorctl_err'] = p_err
     data = {
         "status": "complete",
         "output": output,
@@ -284,3 +369,86 @@ def configure_supervisor(application=None, uwsgi_args={}):
     }
     return data
 
+@task
+def stop_application(app_name=None):
+    """
+    Stops an application
+
+    :keyword app_name: Application to stop
+
+    """
+    if not app_name:
+        raise NameError('You must specify an application name')
+    log_message(logging.INFO, 'root', 'Stopping application {0}'.format(app_name))
+    errors = {}
+    output = {}
+    # signal nginx to stop
+    app_nginx_conf = os.path.join(settings.WEBSERVER_CONF_DIR, 'nginx_{0}.conf'.format(app_name))
+    if os.path.exists(app_nginx_conf):
+        p = Popen(['nginx', '-c', app_nginx_conf, '-s', 'quit'], stdout=PIPE, stderr=PIPE)
+        out, err = p.stdout.read().strip(), p.stderr.read().strip()
+        if out != '':
+            output['nginx_out'] = out
+        if err != '':
+            output['nginx_err'] = err
+    # signal uwsgi to stop
+    p = Popen(['supervisorctl', 'stop', 'uwsgi_{0}'.format(app_name)], stdout=PIPE, stderr=PIPE)
+    out, err = p.stdout.read().strip(), p.stderr.read().strip()
+    if out != '':
+        output['uwsgi_out'] = out
+    if err != '':
+        output['uwsgi_err'] = err
+    # run fuser to kill anything else
+    p = Popen(['fuser', '-k', os.path.join(settings.APPLICATION_BASE_DIR, app_name)], stdout=PIPE, stderr=PIPE)
+    out, err = p.stdout.read().strip(), p.stderr.read().strip()
+    if out != '':
+        output['uwsgi_out'] = out
+    if err != '':
+        output['uwsgi_err'] = err
+
+    data = {
+        "status": "complete",
+        "output": output,
+        "errors": errors,
+        "operation": "stop_application",
+    }
+    return data
+
+@task
+def restart_application(app_name=None):
+    """
+    Restarts an application
+
+    :keyword app_name: Name of application to restart
+
+    """
+    if not app_name:
+        raise NameError('You must specify an application name')
+    log_message(logging.INFO, 'root', 'Stopping application {0}'.format(app_name))
+    errors = {}
+    output = {}
+    # attempt to stop application first
+    stop_application(app_name)
+    # signal nginx to start
+    app_nginx_conf = os.path.join(settings.WEBSERVER_CONF_DIR, 'nginx_{0}.conf'.format(app_name))
+    if os.path.exists(app_nginx_conf):
+        p = Popen(['nginx', '-c', app_nginx_conf], stdout=PIPE, stderr=PIPE)
+        out, err = p.stdout.read().strip(), p.stderr.read().strip()
+        if out != '':
+            output['nginx_out'] = out
+        if err != '':
+            output['nginx_err'] = err
+    # signal uwsgi to stop
+    p = Popen(['supervisorctl', 'start', 'uwsgi_{0}'.format(app_name)], stdout=PIPE, stderr=PIPE)
+    out, err = p.stdout.read().strip(), p.stderr.read().strip()
+    if out != '':
+        output['uwsgi_out'] = out
+    if err != '':
+        output['uwsgi_err'] = err
+    data = {
+        "status": "complete",
+        "output": output,
+        "errors": errors,
+        "operation": "start_application",
+    }
+    return data

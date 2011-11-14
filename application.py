@@ -10,6 +10,7 @@ from flask import flash
 import os
 import uuid
 import logging
+import shutil
 import sys
 import settings
 from optparse import OptionParser
@@ -261,6 +262,18 @@ def api(action=None):
             pkg_name = tempfile.mktemp()
             f.save(pkg_name)
             data['task_id'] = deploy.deploy_app.delay(pkg_name).key
+        elif action.lower() == 'restart':
+            data = {}
+            if 'application' not in request.form:
+                raise NameError('You must specify an application')
+            app_name = request.form['application']
+            data['task_id'] = deploy.restart_application.delay(app_name).key
+        elif action.lower() == 'stop':
+            data = {}
+            if 'application' not in request.form:
+                raise NameError('You must specify an application')
+            app_name = request.form['application']
+            data['task_id'] = deploy.stop_application.delay(app_name).key
         else:
             data['status'] = 'error'
             data['result'] = 'unknown action'
@@ -383,6 +396,31 @@ def start_supervisor():
     if not os.path.exists(pid_file):
         with open(pid_file, 'w') as f:
             f.write(p.pid)
+
+def check_app_dirs():
+    """
+    Creates application directories if needed
+
+    """
+    dirs = (
+        settings.APPLICATION_BASE_DIR,
+        settings.APPLICATION_LOG_DIR,
+        settings.APPLICATION_STATE_DIR,
+        settings.VIRTUALENV_BASE_DIR,
+        settings.SUPERVISOR_CONF_DIR,
+        settings.WEBSERVER_CONF_DIR,
+    )
+    for d in dirs:
+        if not os.path.exists(d):
+            os.makedirs(d)
+    # copy nginx supporting files
+    mime_types = os.path.join(settings.WEBSERVER_CONF_DIR, 'mime.types')
+    uwsgi_params = os.path.join(settings.WEBSERVER_CONF_DIR, 'uwsgi_params')
+    template_dir = os.path.join(settings.PROJECT_PATH, 'templates')
+    if not os.path.exists(mime_types):
+        shutil.copy(os.path.join(template_dir, 'mime.types'), mime_types)
+    if not os.path.exists(uwsgi_params):
+        shutil.copy(os.path.join(template_dir, 'uwsgi_params'), uwsgi_params)
     
 # ----- end management commands -----
 
@@ -402,6 +440,8 @@ if __name__=="__main__":
     if opts.disable_user:
         toggle_user(False)
         sys.exit(0)
+    # check app dirs
+    check_app_dirs()
     # start supervisor
     start_supervisor()
     # run app

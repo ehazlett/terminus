@@ -20,6 +20,7 @@ DB_NAME = 0
 DB_USER = '<DBUSER>'
 DB_PASSWORD = '<DBPASS>'
 NODE_NAME = os.uname()[1]
+PROJECT_PATH = os.path.dirname(__file__)
 SECRET_KEY = "<SECRET_KEY>"
 # queue settings
 TASK_QUEUE_NAME = 'queue:{0}'.format(NODE_NAME)
@@ -27,13 +28,18 @@ TASK_QUEUE_KEY_TTL = 86400
 # app version
 VERSION = '0.1'
 
-# directory vars
-APPLICATION_BASE_DIR = '/var/tmp/apps'
+# vars
+APP_MIN_PORT = 15000
+APP_MAX_PORT = 40000
+ROOT_DIR = '/var/tmp'
+APPLICATION_BASE_DIR = os.path.join(ROOT_DIR, 'apps')
 APPLICATION_USER = 'www-data'
 APPLICATION_GROUP = 'www-data'
-VIRTUALENV_BASE_DIR = '/var/tmp/ve'
-SUPERVISOR_CONF_DIR = '/var/tmp/supervisor'
-WEBSERVER_CONF_DIR = '/var/tmp/nginx'
+APPLICATION_LOG_DIR = os.path.join(ROOT_DIR, 'logs')
+APPLICATION_STATE_DIR = os.path.join(ROOT_DIR, 'state')
+VIRTUALENV_BASE_DIR = os.path.join(ROOT_DIR, 've')
+SUPERVISOR_CONF_DIR = os.path.join(ROOT_DIR, 'supervisor')
+WEBSERVER_CONF_DIR = os.path.join(ROOT_DIR, 'nginx')
 
 try:
     from local_settings import *

@@ -1,4 +1,5 @@
 import hashlib
+from random import Random
 import schema
 import application
 import settings
@@ -89,5 +90,70 @@ def get_task(task_id=None):
        raise NameError('You must specify a task id')
     db = application.get_db_connection()
     task_key = '{0}:{1}'.format(settings.TASK_QUEUE_NAME, task_id)
-    print(task_key)
     return db.get(task_key)
+
+def get_application_config(app=None):
+    if not application:
+        raise NameError('You must specify an application')
+    db = application.get_db_connection()
+    app_key = schema.APP_KEY.format(app)
+    return db.get(app_key)
+
+def update_application_config(app=None, config={}):
+    if not application:
+        raise NameError('You must specify an application')
+    db = application.get_db_connection()
+    app_key = schema.APP_KEY.format(app)
+    db.set(app_key, json.dumps(config))
+    return True
+
+def get_next_application_port():
+    db = application.get_db_connection()
+    k = schema.PORTS_KEY
+    port = None
+    ports = db.get(k)
+    if not ports:
+        ports = []
+    else:
+        try:
+            ports = json.loads(ports)
+        except:
+            ports = []
+    # generate and make sure port not already used
+    while True:
+        port = Random().randint(settings.APP_MIN_PORT, settings.APP_MAX_PORT)
+        if port not in ports:
+            break
+    return port
+
+def reserve_application_port(port=None):
+    if not port:
+        raise NameError('You must specify a port')
+    db = application.get_db_connection()
+    ports = db.get(schema.PORTS_KEY)
+    if not ports:
+        ports = []
+    else:
+        try:
+            ports = json.loads(ports)
+        except:
+            ports = []
+    if port in ports:
+        raise RuntimeError('Port already reserved')
+    ports.append(port)
+    db.set(schema.PORTS_KEY, json.dumps(ports))
+    return True
+
+def release_application_port(port=None):
+    if not port:
+        raise NameError('You must specify a port')
+    db = application.get_db_connection()
+    ports = db.get(schema.PORTS_KEY)
+    if ports:
+        try:
+            ports = json.loads(ports)
+            ports.remove(port)
+            db.set(schema.PORTS_KEY, json.dumps(ports))
+        except:
+            pass
+

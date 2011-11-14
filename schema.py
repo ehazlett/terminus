@@ -2,9 +2,12 @@
 import time
 import settings
 
-USER_KEY = 'users:{0}'
-ROLE_KEY = 'roles:{0}'
+APP_KEY = 'applications:{0}'
 LOG_KEY = 'logs:{0}:'.format(settings.NODE_NAME) + '{0}'
+NODE_KEY = 'nodes:{0}'
+PORTS_KEY = '{0}:ports'.format(NODE_KEY.format(settings.NODE_NAME))
+ROLE_KEY = 'roles:{0}'
+USER_KEY = 'users:{0}'
 
 def user(username=None, first_name=None, last_name=None, email=None, \
     password=None, role=None, enabled=True):
