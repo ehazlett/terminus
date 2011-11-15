@@ -254,7 +254,10 @@ def clear_logs():
 def api(action=None):
     data = {}
     try:
-        if action.lower() == 'version':
+        if not action:
+            raise NameError('You must specify an action')
+        action = action.lower()
+        if action == 'version':
             return jsonify({'name': app.config['APP_NAME'], 'version': app.config['VERSION']})
         elif action.lower() == 'deploy':
             data = {}
@@ -262,18 +265,24 @@ def api(action=None):
             pkg_name = tempfile.mktemp()
             f.save(pkg_name)
             data['task_id'] = deploy.deploy_app.delay(pkg_name).key
-        elif action.lower() == 'restart':
+        elif action == 'restart':
             data = {}
             if 'application' not in request.form:
                 raise NameError('You must specify an application')
             app_name = request.form['application']
             data['task_id'] = deploy.restart_application.delay(app_name).key
-        elif action.lower() == 'stop':
+        elif action == 'stop':
             data = {}
             if 'application' not in request.form:
                 raise NameError('You must specify an application')
             app_name = request.form['application']
             data['task_id'] = deploy.stop_application.delay(app_name).key
+        elif action == 'remove':
+            data = {}
+            if 'application' not in request.form:
+                raise NameError('You must specify an application')
+            app_name = request.form['application']
+            data['task_id'] = deploy.remove_application.delay(app_name).key
         else:
             data['status'] = 'error'
             data['result'] = 'unknown action'
@@ -347,6 +356,7 @@ def generate_supervisor_conf():
     conf += '[unix_http_server]\n'
     conf += 'file={0}\n\n'.format(os.path.join(settings.SUPERVISOR_CONF_DIR, 'supervisor.sock'))
     conf += '[supervisord]\n'
+    conf += 'childlogdir={0}\n'.format(settings.APPLICATION_LOG_DIR)
     conf += 'logfile={0}\n'.format(os.path.join(settings.SUPERVISOR_CONF_DIR, 'supervisord.log'))
     conf += 'logfile_maxbytes=50MB\n'
     conf += 'logfile_backups=5\n'

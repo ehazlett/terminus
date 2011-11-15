@@ -107,6 +107,14 @@ def update_application_config(app=None, config={}):
     db.set(app_key, json.dumps(config))
     return True
 
+def remove_application_config(app=None):
+    if not application:
+        raise NameError('You must specify an application')
+    db = application.get_db_connection()
+    app_key = schema.APP_KEY.format(app)
+    db.delete(app_key)
+    return True
+
 def get_next_application_port():
     db = application.get_db_connection()
     k = schema.PORTS_KEY
