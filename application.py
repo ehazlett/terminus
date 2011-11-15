@@ -439,6 +439,7 @@ if __name__=="__main__":
     op.add_option('--create-user', dest='create_user', action='store_true', default=False, help='Create/update user')
     op.add_option('--enable-user', dest='enable_user', action='store_true', default=False, help='Enable user')
     op.add_option('--disable-user', dest='disable_user', action='store_true', default=False, help='Disable user')
+    op.add_option('--port', dest='port', default='5000', help='Port to run Werkzeug debug server')
     opts, args = op.parse_args()
 
     if opts.create_user:
@@ -455,6 +456,6 @@ if __name__=="__main__":
     # start supervisor
     start_supervisor()
     # run app
-    app.run()
+    app.run(port=int(opts.port))
 
 

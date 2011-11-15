@@ -109,6 +109,7 @@ def deploy_app(package=None, build_ve=True, force_rebuild_ve=False):
                     new_port = utils.get_next_application_port()
                     instances.append(new_port)
                     utils.reserve_application_port(new_port)
+                    log_message(logging.DEBUG, app_name, 'Reserved port {0} for {1}'.format(new_port, app_name))
                     app_config['instances'] = {}
                     app_config['instances'][settings.NODE_NAME] = instances
                 # install app
