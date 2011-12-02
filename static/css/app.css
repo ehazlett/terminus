@@ -49,3 +49,6 @@ body {
 .topbar {
   color: #b1b1b1;
 }
+td.app-actions {
+  text-align: center;
+}

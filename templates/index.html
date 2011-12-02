@@ -1,5 +1,52 @@
 {% extends "base.html" %}
-{% block page_header %}dashboard{% endblock %}
+{% block page_header %}{{_('dashboard')}}{% endblock %}
 
 {% block main_content %}
+<div class="row pull-right">
+  <div class="span2 well">
+    <a href="{{url_for('index')}}" class="btn info">{{_('Refresh')}}</a>
+  </div>
+</div>
+<div class="row">
+  <div class="fill">
+    {% if applications %}
+    <table id="applications" class="zebra-striped">
+      <thead>
+        <tr>
+          <th>{{_('Name')}}</th>
+          <th>{{_('Version')}}</th>
+          <th>{{_('Runtime')}}</th>
+          <th>{{_('Instances')}}</th>
+          <th></th>
+        </tr>
+      </thead>
+      {% for app in applications %}
+      <tr>
+        <td>{{app.name}}</td>
+        <td>{{app.version}}</td>
+        <td>{{app.runtime}}</td>
+        <td>{{app.instances}}</td>
+        <td class="app-actions" width="20%">
+          <a href="#" data-app="{{app.name}}" class="btn restart">{{_('Restart')}}</a>
+          <a href="#" data-app="{{app.name}}" class="btn stop error">{{_('Stop')}}</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <div>{{_('There are no applications.')}}</div>
+    {% endif %}
+  </div>
+</div>
+<script type="text/javascript">
+  $(".restart").click(function(){
+    alert("TODO: Restart " + (this).getAttribute('data-app'));
+  });
+  $(".stop").click(function(){
+    alert("TODO: Stop " + (this).getAttribute('data-app'));
+  });
+  $(document).ready(function(){
+    $("#applications").tablesorter({ sortList: [[0,1]] });
+  });
+</script>
 {% endblock %}

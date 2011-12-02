@@ -7,6 +7,7 @@ from flask import g
 from flask import render_template
 from flask import redirect, url_for
 from flask import flash
+from flaskext.babel import Babel
 import os
 import uuid
 import logging
@@ -17,6 +18,7 @@ from optparse import OptionParser
 from subprocess import call, Popen, PIPE
 from getpass import getpass
 import tempfile
+import time
 from datetime import datetime
 from random import Random
 import string
@@ -33,6 +35,8 @@ app = Flask(__name__)
 app.debug = settings.DEBUG
 app.logger.setLevel(logging.ERROR)
 app.config.from_object('settings')
+# extensions
+babel = Babel(app)
 
 # ----- filters -----
 @app.template_filter('datefromtime')
@@ -53,10 +57,38 @@ def get_db_connection():
     return redis.Redis(host=app.config['DB_HOST'], port=app.config['DB_PORT'], \
         db=app.config['DB_NAME'], password=app.config['DB_PASSWORD'])
 
+@babel.localeselector
+def get_locale():
+    # if a user is logged in, use the locale from the account
+    if session.has_key('user'):
+        user = json.loads(g.db.get(schema.USER_KEY.format(session['user'])))
+        if user.has_key('locale'):
+            return user['locale']
+    # otherwise try to guess the language from the user accept
+    # header the browser sends
+    return request.accept_languages.best_match([x[0] for x in app.config['LOCALES']])
+
 @app.route("/")
 def index():
     if 'auth_token' in session:
-        return render_template("index.html")
+        try:
+            applications = g.db.smembers(schema.NODE_APPS_KEY)
+            apps = []
+            for app in applications:
+                json_data = json.loads(g.db.get(schema.APP_KEY.format(app)))
+                app_data = {
+                    'name': app,
+                    'version': json_data['version'],
+                    'instances': json_data['instances'][settings.NODE_NAME],
+                    'runtime': json_data['runtime'],
+                }
+                apps.append(app_data)
+            ctx = {
+                'applications': apps,
+            }
+        except Exception, e:
+            flash(e, 'error')
+        return render_template("index.html", **ctx)
     else:
         return redirect(url_for('about'))
 
@@ -113,6 +145,7 @@ def account():
         if request.method == 'GET':
             ctx = {
                 'account': account,
+                'locales': app.config['LOCALES'],
             }
             return render_template('account.html', **ctx)
         else:
@@ -284,6 +317,7 @@ def api(action=None):
             app_name = request.form['application']
             data['task_id'] = deploy.remove_application.delay(app_name).key
         else:
+            print('Unknown action: {0}'.format(action))
             data['status'] = 'error'
             data['result'] = 'unknown action'
     except Exception, e:
@@ -432,8 +466,6 @@ def check_app_dirs():
     if not os.path.exists(uwsgi_params):
         shutil.copy(os.path.join(template_dir, 'uwsgi_params'), uwsgi_params)
     
-# ----- end management commands -----
-
 if __name__=="__main__":
     op = OptionParser()
     op.add_option('--create-user', dest='create_user', action='store_true', default=False, help='Create/update user')

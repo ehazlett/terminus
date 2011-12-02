@@ -165,3 +165,27 @@ def release_application_port(port=None):
         except:
             pass
 
+def add_app_to_node_app_list(app_name=None):
+    if not app_name:
+        raise NameError('You must specify an application name')
+    db = application.get_db_connection()
+    db.sadd(schema.NODE_APPS_KEY, app_name)
+    return True
+
+def remove_app_from_node_app_list(app_name=None):
+    if not app_name:
+        raise NameError('You must specify an application name')
+    db = application.get_db_connection()
+    db.srem(schema.NODE_APPS_KEY, app_name)
+    return True
+
+def publish_client_message(message={}):
+    if not message:
+        raise NameError('You must specify a message')
+    db = application.get_db_connection()
+    # check type
+    if not isinstance(message, dict):
+        message = {'message': message}
+    db.publish(settings.CLIENT_CHANNEL, json.dumps(message))
+    return True
+

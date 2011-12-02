@@ -175,8 +175,9 @@ def deploy_app(package=None, build_ve=True, force_rebuild_ve=False):
     except Exception, e:
         traceback.print_exc()
         log_message(logging.ERROR, 'root', 'Deploy: {0}'.format(traceback.format_exc()))
-
         errors['deploy'] = str(e)
+    # add app to node app list
+    utils.add_app_to_node_app_list(app_name)
     # cleanup
     if os.path.exists(tmp_deploy_dir):
         shutil.rmtree(tmp_deploy_dir)
@@ -363,6 +364,7 @@ def configure_supervisor(application=None, uwsgi_args={}):
         uwsgi_config += '  -s {0}\n'.format(os.path.join(app_state_dir, '{0}_{1}.sock'.format(application, instance)))
         uwsgi_config += '  -H {0}\n'.format(os.path.join(settings.VIRTUALENV_BASE_DIR, application))
         uwsgi_config += '  -M\n'
+        uwsgi_config += '  -C\n'
         uwsgi_config += '  -p 2\n'
         uwsgi_config += '  --no-orphans\n'
         uwsgi_config += '  --vacuum\n'
@@ -544,6 +546,8 @@ def remove_application(app_name=None):
     output['reserved_ports'] = 'released'
     # remove app config
     utils.remove_application_config(app_name)
+    # remove from node app list
+    utils.remove_app_from_node_app_list(app_name)
     # signal supervisor to update
     p = Popen(['supervisorctl', 'update'], stdout=PIPE, stderr=PIPE)
     p_out, p_err = p.stdout.read().strip(), p.stderr.read().strip()

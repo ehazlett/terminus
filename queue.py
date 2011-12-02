@@ -60,7 +60,7 @@ def queue_daemon(app, rv_ttl=settings.TASK_QUEUE_KEY_TTL):
 
 if __name__=='__main__':
     from application import app
-    print('Starting eve queue...')
+    print('Starting queue...')
     try:
         queue_daemon(app)
     except KeyboardInterrupt:

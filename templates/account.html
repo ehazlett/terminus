@@ -20,9 +20,20 @@
           </div>
         </div>
         <div class="clearfix">
-          <label for="email">Email</label>
+          <label for="email">{{_('Email')}}</label>
           <div class="input">
             <input type="text" class="xlarge" id="email" name="email" size="span4" value="{{account.email}}"/>
+          </div>
+        </div>
+        <div class="clearfix">
+          <label for="locale">{{_('Locale')}}</label>
+          <div class="input">
+            <select class="span3 medium required" id="locale" name="locale">
+              <option value="">-----</option>
+              {% for locale in locales %}
+              <option value="{{locale[0]}}" {% if account.locale == locale[0] %}selected="true"{% endif %}>{{locale[1]}}</option>
+              {% endfor %}
+            </select>
           </div>
         </div>
         <div class="clearfix">
