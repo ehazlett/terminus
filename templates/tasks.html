@@ -1,12 +1,10 @@
 {% extends "base.html" %}
 {% block page_header %}tasks{% endblock %}
+{% block page_header_toolbar %}
+  <a href="#" data-url="{{url_for('delete_all_tasks')}}" class="btn deletealltasks error">Delete All Tasks</a>
+{% endblock %}
 
 {% block main_content %}
-<div class="row pull-right">
-  <div class="span3 well">
-    <a href="#" data-url="{{url_for('delete_all_tasks')}}" class="btn deletealltasks error">Delete All Tasks</a>
-  </div>
-</div>
 <div class="row">
   <div class="fill">
     {% if tasks %}

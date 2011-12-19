@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 {% block page_header %}accounts{% endblock %}
+{% block page_header_toolbar %}
+  <a href="#" data-controls-modal="modal-user" data-backdrop="true" data-keyboard="true" class="btn">New User</a>
+  <a href="#" data-controls-modal="modal-role" data-backdrop="true" data-keyboard="true" class="btn">New Role</a>
+{% endblock %}
 
 {% block main_content %}
 <div id="modal-user" class="modal hide">
@@ -56,11 +60,6 @@
   </div>
 </div>
 <h2>Users</h2>
-<div class="row pull-right">
-  <div class="span2 well">
-    <a href="#" data-controls-modal="modal-user" data-backdrop="true" data-keyboard="true" class="btn primary">New User</a>
-  </div>
-</div>
 <div class="row">
   <div class="fill">
     {% if users %}
@@ -126,11 +125,6 @@
   </div>
 </div>
 <h2>Roles</h2>
-<div class="row pull-right">
-  <div class="span2 well">
-    <a href="#" data-controls-modal="modal-role" data-backdrop="true" data-keyboard="true" class="btn primary">New Role</a>
-  </div>
-</div>
 <div class="row">
   <div class="fill">
     {% if roles %}

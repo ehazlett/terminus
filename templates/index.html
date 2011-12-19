@@ -1,12 +1,10 @@
 {% extends "base.html" %}
 {% block page_header %}{{_('dashboard')}}{% endblock %}
+{% block page_header_toolbar%}
+  <a href="{{url_for('index')}}" class="btn info">{{_('Refresh')}}</a>
+{% endblock %}
 
 {% block main_content %}
-<div class="row pull-right">
-  <div class="span2 well">
-    <a href="{{url_for('index')}}" class="btn info">{{_('Refresh')}}</a>
-  </div>
-</div>
 <div class="row">
   <div class="fill">
     {% if applications %}

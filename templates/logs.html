@@ -1,13 +1,11 @@
 {% extends "base.html" %}
-{% block page_header %}logs{% endblock %}
+{% block page_header %}{{_('logs')}}{% endblock %}
+{% block page_header_toolbar %}
+  <a href="#" data-url="{{url_for('clear_logs')}}" class="btn clearlogs">{{_('Clear All Logs')}}</a>
+  <a href="{{url_for('logs')}}" class="btn info">{{_('Refresh')}}</a>
+{% endblock %}
 
 {% block main_content %}
-<div class="row pull-right">
-  <div class="span4 well">
-    <a href="#" data-url="{{url_for('clear_logs')}}" class="btn clearlogs">{{_('Clear All Logs')}}</a>
-    <a href="{{url_for('logs')}}" class="btn info">{{_('Refresh')}}</a>
-  </div>
-</div>
 <div class="row">
   <div class="fill">
     {% if logs %}

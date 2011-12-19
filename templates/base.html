@@ -35,6 +35,9 @@
             <p>{{message}}<p>
           </div>
         {% endfor %}
+        <script type="text/javascript">
+          $(".alert-message").delay(5000).fadeOut();
+        </script>
       {% endif %}
     </div>
     {% endwith %}
@@ -78,6 +81,7 @@
     <div class="container">
       <div class="content">
         <div class="page-header">
+          <div class="pull-right">{% block page_header_toolbar %}{% endblock %}</div>
           <h1>{% block page_header %}{% endblock %}</h1>
         </div>
         <div class="row">

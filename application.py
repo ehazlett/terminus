@@ -438,8 +438,9 @@ def start_supervisor():
         log_message(logging.ERROR, 'supervisord', p_err)
     # write pid if needed
     if not os.path.exists(pid_file):
-        with open(pid_file, 'w') as f:
-            f.write(p.pid)
+        f = open(pid_file, 'w')
+        f.write(p.pid)
+        f.close()
 
 def check_app_dirs():
     """
@@ -471,9 +472,12 @@ if __name__=="__main__":
     op.add_option('--create-user', dest='create_user', action='store_true', default=False, help='Create/update user')
     op.add_option('--enable-user', dest='enable_user', action='store_true', default=False, help='Enable user')
     op.add_option('--disable-user', dest='disable_user', action='store_true', default=False, help='Disable user')
+    op.add_option('--host', dest='host', default='localhost', help='Host to listen on for the Werkzeug debug server')
     op.add_option('--port', dest='port', default='5000', help='Port to run Werkzeug debug server')
     opts, args = op.parse_args()
 
+    # check app dirs
+    check_app_dirs()
     if opts.create_user:
         create_user()
         sys.exit(0)
@@ -483,11 +487,9 @@ if __name__=="__main__":
     if opts.disable_user:
         toggle_user(False)
         sys.exit(0)
-    # check app dirs
-    check_app_dirs()
     # start supervisor
     start_supervisor()
     # run app
-    app.run(port=int(opts.port))
+    app.run(host=opts.host, port=int(opts.port))
 
 
