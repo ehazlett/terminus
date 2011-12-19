@@ -22,4 +22,5 @@ function flash(msg, status){
   $("#messages").add(msg);
   $("#messages").removeClass('hide');
   $(".alert-message").alert();
+  $(".alert-message").delay(5000).fadeOut();
 }

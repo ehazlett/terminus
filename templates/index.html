@@ -38,7 +38,12 @@
 </div>
 <script type="text/javascript">
   $(".restart").click(function(){
-    alert("TODO: Restart " + (this).getAttribute('data-app'));
+    var app = (this).getAttribute('data-app');
+    if (confirm("{{_('Restart')}} " + app + "?")) {
+      $.post("{{url_for('api', action='restart')}}", {'application': app}, function(data) {
+        flash(app + " {{_('restarted')}}", 'success');
+      });
+    }
   });
   $(".stop").click(function(){
     alert("TODO: Stop " + (this).getAttribute('data-app'));
