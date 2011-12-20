@@ -25,6 +25,7 @@ from random import Random
 import string
 import redis
 import utils
+import hashlib
 from utils import deploy, config
 from utils.log import RedisHandler
 import queue
@@ -236,6 +237,19 @@ def tasks():
     tasks = []
     for t in g.db.keys('{0}:*'.format(app.config['TASK_QUEUE_NAME'])):
         tasks.append(json.loads(g.db.get(t)))
+    num_of_queued = g.db.llen(app.config['TASK_QUEUE_NAME'])
+    if num_of_queued > 0:
+        for i in range(num_of_queued):
+            # generate unique hash for key -- used to delete
+            task_data = g.db.lindex(app.config['TASK_QUEUE_NAME'], i)
+            sha = hashlib.sha256(task_data)
+            task_hash = sha.hexdigest()
+            data = {}
+            data['task'] = task_data
+            data['task_id'] = task_hash
+            data['date'] = None
+            data['status'] = 'new'
+            tasks.append(data)
     ctx = {
         'tasks': tasks,
     }
@@ -243,23 +257,21 @@ def tasks():
 
 @app.route("/tasks/delete/<task_id>/")
 @admin_required
-def delete_task(task_id):
+def delete_task(task_id=None):
     # delete 'complete' key
-    if task_id.find(':') > -1:
-        g.db.delete(task_id)
+    key = '{0}:{1}'.format(app.config['TASK_QUEUE_NAME'], task_id)
+    if task_id and g.db.get(key):
+        g.db.delete(key)
     else: # task is 'new'
-        task_id = int(task_id)
-        if task_id == 0:
-            g.db.lpop(app.config['TASK_QUEUE_NAME'])
-        else: # hack -- rebuild list because `del lindex list <index>` doesn't work in redis-py
-            pre = g.db.lrange(app.config['TASK_QUEUE_NAME'], 0, task_id-1)
-            post = g.db.lrange(app.config['TASK_QUEUE_NAME'], task_id+1, -1)
-            pre.reverse()
-            post.reverse()
-            g.db.delete(app.config['TASK_QUEUE_NAME'])
-            [g.db.lpush(app.config['TASK_QUEUE_NAME'], x) for x in post]
-            [g.db.lpush(app.config['TASK_QUEUE_NAME'], x) for x in pre]
-    flash('Task deleted...')
+        # generate hash to find key
+        for k in range(g.db.llen(app.config['TASK_QUEUE_NAME'])):
+            task_data = g.db.lindex(app.config['TASK_QUEUE_NAME'], k)
+            sha = hashlib.sha256(task_data)
+            task_hash = sha.hexdigest()
+            if task_hash == task_id:
+                g.db.lrem(app.config['TASK_QUEUE_NAME'], task_data)
+    log.info('{0} deleted task {1}'.format(session['user'], task_id))
+    flash('Task deleted...', 'success')
     return redirect(url_for('tasks'))
 
 @app.route("/tasks/deleteall/")

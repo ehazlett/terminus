@@ -41,7 +41,7 @@
     var app = (this).getAttribute('data-app');
     if (confirm("{{_('Restart')}} " + app + "?")) {
       $.post("{{url_for('api', action='restart')}}", {'application': app}, function(data) {
-        flash(app + " {{_('restarted')}}", 'success');
+        flash(app + " {{_('restart queued...')}}", 'default');
       });
     }
   });
