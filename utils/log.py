@@ -1,22 +1,19 @@
 #!/usr/bin/env python
 import application
 import schema
-import time
+import logging
 try:
     import simplejson as json
 except ImportError:
     import json
 
-def log_message(level=None, category=None, message=None):
-    """
-    Logs message
+class RedisHandler(logging.Handler):
+    def __init__(self):
+        logging.Handler.__init__(self)
 
-    :keyword level: Level of message
-    :keyword application: Name of application
-    :keyword message: Message to log
+    def emit(self, msg):
+        db = application.get_db_connection()
+        data = schema.log(msg.levelno, msg.name, msg.msg)
+        log_key = schema.LOG_KEY.format('{0}:{1}'.format(data['category'], data['date']))
+        db.set(log_key, json.dumps(data))
 
-    """
-    db = application.get_db_connection()
-    data = schema.log(level, category, message)
-    log_key = schema.LOG_KEY.format('{0}:{1}'.format(category, data['date']))
-    db.set(log_key, json.dumps(data))

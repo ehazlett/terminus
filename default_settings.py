@@ -24,6 +24,7 @@ LOCALES = (
     ('en', lazy_gettext(u'English')),
     ('fr', lazy_gettext(u'French')),
 )
+LOG_LEVEL = logging.DEBUG
 NODE_NAME = os.uname()[1]
 PROJECT_PATH = os.path.dirname(__file__)
 SECRET_KEY = "<SECRET_KEY>"

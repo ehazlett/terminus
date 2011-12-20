@@ -14,12 +14,12 @@ function validateForm(formId) {
     return true;
   }
 }
-function flash(msg, status){
+function flash(text, status){
   var msg = $("<div class='alert-message message fade in' data-alert='alert'></div>");
   msg.addClass(status);
-  msg.add("<a class='close' href='#'>x</a>");
-  msg.add('<p>'+msg+'</p>');
-  $("#messages").add(msg);
+  msg.append("<a class='close' href='#'>x</a>");
+  msg.append('<p>'+text+'</p>');
+  $("#messages").append(msg);
   $("#messages").removeClass('hide');
   $(".alert-message").alert();
   $(".alert-message").delay(5000).fadeOut();

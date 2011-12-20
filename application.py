@@ -8,6 +8,7 @@ from flask import render_template
 from flask import redirect, url_for
 from flask import flash
 from flaskext.babel import Babel
+from flaskext.babel import format_datetime
 import os
 import uuid
 import logging
@@ -24,8 +25,8 @@ from random import Random
 import string
 import redis
 import utils
-from utils import deploy
-from utils.log import log_message
+from utils import deploy, config
+from utils.log import RedisHandler
 import queue
 import schema
 import messages
@@ -38,10 +39,20 @@ app.config.from_object('settings')
 # extensions
 babel = Babel(app)
 
+# redis handler
+redis_handler = RedisHandler()
+redis_handler.setLevel(logging.DEBUG)
+app.logger.addHandler(redis_handler)
+
+api_log = config.get_logger('api')
+console_log = config.get_logger('console')
+startup_log = config.get_logger('boot')
+log = config.get_logger('webui')
+
 # ----- filters -----
-@app.template_filter('datefromtime')
-def datefromtime_filter(time):
-    return datetime.fromtimestamp(time)
+@app.template_filter('date_from_timestamp')
+def date_from_timestamp(timestamp):
+    return format_datetime(datetime.fromtimestamp(timestamp))
 
 # ----- end filters ----
 
@@ -417,7 +428,7 @@ def start_supervisor():
     pid_file = os.path.join(settings.SUPERVISOR_CONF_DIR, 'supervisord.pid')
     sock_file = os.path.join(settings.SUPERVISOR_CONF_DIR, 'supervisor.sock')
     if os.path.exists(pid_file):
-        log_message(logging.DEBUG, 'supervisord', 'Stopping supervisord')
+        startup_log.debug('Stopping supervisord')
         with open(pid_file, 'r') as f:
             pid = f.read().strip()
         try:
@@ -425,17 +436,17 @@ def start_supervisor():
                 os.kill(int(pid), 9)
                 # remove socket
         except Exception, e:
-            log_message(logging.WARN, 'root', str(e))
+            startup_log.warn(str(e))
     if os.path.exists(sock_file):
         os.remove(sock_file)
     # start
-    log_message(logging.DEBUG, 'supervisord', 'Starting supervisord')
+    startup_log.debug('Starting supervisord')
     p = Popen(['supervisord', '-c', 'supervisord.conf'], stdout=PIPE, stderr=PIPE)
     p_out, p_err = p.stdout.read().strip(), p.stderr.read().strip()
     if p_out != '':
-        log_message(logging.DEBUG, 'supervisord', p_out)
+        startup_log.debug(p_out)
     if p_err != '':
-        log_message(logging.ERROR, 'supervisord', p_err)
+        startup_log.error(p_err)
     # write pid if needed
     if not os.path.exists(pid_file):
         f = open(pid_file, 'w')

@@ -11,18 +11,17 @@
     <table id="tasks" class="zebra-striped">
       <thead>
         <tr>
-          <th>Task</th>
-          <th>Status</th>
+          <th>{{_('Date')}}</th>
+          <th>{{_('Task')}}</th>
+          <th>{{_('Status')}}</th>
           <th></th>
         </tr>
       </thead>
       {% for task in tasks|sort(attribute='date', reverse=True) %}
       <tr>
+        <td width="15%">{% if task.date %}{{task.date|date_from_timestamp}}{% endif %}</td>
         <td>
-          <dl>
-            <dt>{{task.date|datefromtime}}</dt>
-            <dd>{{task.key}}</dd>
-            <dd>{{task.status}}</dd>
+            <dd>{{task.task}}</dd>
             {% if task.result %}
             <dd>{{task.result}}</dd>
             {% endif %}
@@ -48,6 +47,7 @@
 </div>
 <script type="text/javascript">
   $(document).ready(function(){
+    $("#tasks").tablesorter({ sortList: [[0,1]] });
     $("#tasks a.btn").click(function() {
       if (confirm('Are you sure you want to delete the task?')) {
         $(location).attr('href', (this).getAttribute('data-url'));
