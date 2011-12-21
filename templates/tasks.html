@@ -37,7 +37,7 @@
           <span class="label">{{_('Complete')}}</span>
           {% endif %}
         </td>
-        <td width="10%"><a class="btn" href="#" data-url="{{url_for('delete_task', task_id=task.task_id)}}">{{_('Delete')}}</a></td>
+        <td width="10%" class="app-actions"><a class="btn" href="#" data-url="{{url_for('delete_task', task_id=task.task_id)}}">{{_('Delete')}}</a></td>
       </tr>
       {% endfor %}
     </table>
