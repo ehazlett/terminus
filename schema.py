@@ -2,10 +2,10 @@
 import time
 import settings
 
-APP_KEY = 'applications:{0}'
+APP_KEY = 'applications:{0}:{1}'
 LOG_KEY = 'logs:{0}:'.format(settings.NODE_NAME) + '{0}'
 NODE_KEY = 'nodes:{0}'
-NODE_APPS_KEY = '{0}:applications'.format(NODE_KEY.format(settings.NODE_NAME))
+NODE_APPS_KEY = '{0}:applications'.format(NODE_KEY)
 PORTS_KEY = '{0}:ports'.format(NODE_KEY.format(settings.NODE_NAME))
 ROLE_KEY = 'roles:{0}'
 USER_KEY = 'users:{0}'

@@ -47,6 +47,8 @@ def queue_daemon(app, rv_ttl=settings.TASK_QUEUE_KEY_TTL):
             rv = func(*args, **kwargs)
             data['status'] = 'complete'
         except Exception, e:
+            import traceback
+            traceback.print_exc()
             rv = e
             data['status'] = 'error'
         if isinstance(rv, dict):

@@ -1,54 +1,56 @@
 {% extends "base.html" %}
 
-{% block page_header %}{{account.username}}{% endblock %}
-
-{% block main_content %}
-<div class="row">
-  <div class="span10 offset2">
-    <form id="account" method="post">
-      <fieldset>
-        <div class="clearfix">
-          <label for="first_name">First Name</label>
-          <div class="input">
-            <input type="text" class="span3" id="first_name" name="first_name" value="{{account.first_name}}"/>
-          </div>
-        </div>
-        <div class="clearfix">
-          <label for="last_name">Last Name</label>
-          <div class="input">
-            <input type="text" class="span3" id="last_name" name="last_name" value="{{account.last_name}}"/>
-          </div>
-        </div>
-        <div class="clearfix">
-          <label for="email">{{_('Email')}}</label>
-          <div class="input">
-            <input type="text" class="xlarge" id="email" name="email" size="span4" value="{{account.email}}"/>
-          </div>
-        </div>
-        <div class="clearfix">
-          <label for="locale">{{_('Locale')}}</label>
-          <div class="input">
-            <select class="span3 medium required" id="locale" name="locale">
-              <option value="">-----</option>
-              {% for locale in locales %}
-              <option value="{{locale[0]}}" {% if account.locale == locale[0] %}selected="true"{% endif %}>{{locale[1]}}</option>
-              {% endfor %}
-            </select>
-          </div>
-        </div>
-        <div class="clearfix">
-          <label for="apikey">API Key</label>
-          <div class="input">
-            <input type="text" class="xlarge" id="apikey" name="apikey" size="span4" readonly="true" value="{{account.apikey}}"/>
-            <span class="help-inline"><a class="btn generate-api-key" href="#">Generate</a></span>
-          </div>
-        </div>
-        <div class="actions">
-          <input type="submit" class="btn primary" value="Save"/>
-          <a class="btn" href="{{url_for('index')}}">Cancel</a>
-        </div>
-      </fieldset>
-    </form>
+{% block base_content %}
+<div class="container">
+  <div class="content">
+    <div class="row">
+      <div class="span10 offset2">
+        <form id="account" method="post">
+          <fieldset>
+            <div class="clearfix">
+              <label for="first_name">{{_('First Name')}}</label>
+              <div class="input">
+                <input type="text" class="span3" id="first_name" name="first_name" value="{{account.first_name}}"/>
+              </div>
+            </div>
+            <div class="clearfix">
+              <label for="last_name">{{_('Last Name')}}</label>
+              <div class="input">
+                <input type="text" class="span3" id="last_name" name="last_name" value="{{account.last_name}}"/>
+              </div>
+            </div>
+            <div class="clearfix">
+              <label for="email">{{_('Email')}}</label>
+              <div class="input">
+                <input type="text" class="xlarge" id="email" name="email" size="span4" value="{{account.email}}"/>
+              </div>
+            </div>
+            <div class="clearfix">
+              <label for="locale">{{_('Locale')}}</label>
+              <div class="input">
+                <select class="span3 medium required" id="locale" name="locale">
+                  <option value="">-----</option>
+                  {% for locale in locales %}
+                  <option value="{{locale[0]}}" {% if account.locale == locale[0] %}selected="true"{% endif %}>{{locale[1]}}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="clearfix">
+              <label for="apikey">{{_('API Key')}}</label>
+              <div class="input">
+                <input type="text" class="xlarge" id="apikey" name="apikey" size="span4" readonly="true" value="{{account.apikey}}"/>
+                <span class="help-inline"><a class="btn generate-api-key" href="#">{{_('Generate')}}</a></span>
+              </div>
+            </div>
+            <div class="actions">
+              <input type="submit" class="btn primary" value="{{_('Save')}}"/>
+              <a class="btn" href="{{url_for('index')}}">{{_('Cancel')}}</a>
+            </div>
+          </fieldset>
+        </form>
+      </div>
+    </div>
   </div>
 </div>
 <script type="text/javascript">

@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>{{config['APP_NAME']}}{% if title %}:: {{title}}{% endif %}</title>
+    <title>{{config['APP_NAME']}}: {{config['NODE_NAME']}}{% if title %}:: {{title}}{% endif %}</title>
     <meta name="description" content="">
     <meta name="author" content="">
 
@@ -43,7 +43,7 @@
     {% endwith %}
     <div class="topbar">
       <div class="fill">
-        <div class="container">
+        <div class="container-fluid">
           <a class="brand" href="/">{{config['APP_NAME']}}</a>
           <ul class="nav">
             {% if session.role == 'admin' %}
@@ -78,7 +78,8 @@
       </div>
     </div>
 
-    <div class="container">
+    {% block base_content %}
+    <div class="container-fluid">
       <div class="content">
         <div class="page-header">
           <div class="pull-right">{% block page_header_toolbar %}{% endblock %}</div>
@@ -90,9 +91,11 @@
           </div>
         </div>
       </div>
-      <footer>
-      </footer>
-    </div> <!-- /container -->
+    </div>
+    {% endblock %}
+    <footer>
+      <div>&copy; Evan Hazlett :: <a href="https://github.com/ehazlett/terminus">Fork on Github</a></div>
+    </footer>
     <!-- scripts -->
     <script type="text/javascript" src="/static/js/bootstrap-alerts.js"></script>
     <script type="text/javascript" src="/static/js/bootstrap-modal.js"></script>

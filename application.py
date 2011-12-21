@@ -53,7 +53,7 @@ log = config.get_logger('webui')
 # ----- filters -----
 @app.template_filter('date_from_timestamp')
 def date_from_timestamp(timestamp):
-    return format_datetime(datetime.fromtimestamp(timestamp))
+    return datetime.fromtimestamp(timestamp).strftime('%b %d, %Y %H:%M:%S.%f')
 
 # ----- end filters ----
 
@@ -83,11 +83,12 @@ def get_locale():
 @app.route("/")
 def index():
     if 'auth_token' in session:
+        ctx = {}
         try:
-            applications = g.db.smembers(schema.NODE_APPS_KEY)
+            applications = utils.get_node_applications()
             apps = []
             for app in applications:
-                json_data = json.loads(g.db.get(schema.APP_KEY.format(app)))
+                json_data = json.loads(utils.get_application_config(app))
                 app_data = {
                     'name': app,
                     'version': json_data['version'],
@@ -99,6 +100,8 @@ def index():
                 'applications': apps,
             }
         except Exception, e:
+            import traceback
+            traceback.print_exc()
             flash(e, 'error')
         return render_template("index.html", **ctx)
     else:

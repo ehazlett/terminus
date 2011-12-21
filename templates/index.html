@@ -32,7 +32,7 @@
       {% endfor %}
     </table>
     {% else %}
-    <div>{{_('There are no applications.')}}</div>
+    <div class="info">{{_('There are no applications.')}}</div>
     {% endif %}
   </div>
 </div>
@@ -46,7 +46,12 @@
     }
   });
   $(".stop").click(function(){
-    alert("TODO: Stop " + (this).getAttribute('data-app'));
+    var app = (this).getAttribute('data-app');
+    if (confirm("{{_('Stop')}} " + app + "?")) {
+      $.post("{{url_for('api', action='stop')}}", {'application': app}, function(data) {
+        flash(app + " {{_('stop queued...')}}", 'default');
+      });
+    }
   });
   $(document).ready(function(){
     $("#applications").tablesorter({ sortList: [[0,1]] });

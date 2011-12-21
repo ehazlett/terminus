@@ -22,7 +22,7 @@
       </thead>
       {% for log in logs %}
       <tr>
-        <td width="15%">{{log.date|date_from_timestamp}}</td>
+        <td width="20%">{{log.date|date_from_timestamp}}</td>
         <td width="10%">
           {% if log.level == 10 %}
           <span class="label">{{_('debug')}}</span>
@@ -42,7 +42,7 @@
       {% endfor %}
     </table>
     {% else %}
-    <div>{{_('There are no logs.')}}</div>
+    <div class="info">{{_('There are no logs.')}}</div>
     {% endif %}
   </div>
 </div>

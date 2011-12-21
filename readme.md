@@ -1,3 +1,3 @@
-Minion
+Terminus
 =========
-Application management system
+Application management system (node)

@@ -4,6 +4,9 @@ import os
 import traceback
 import re
 from subprocess import call, Popen, PIPE
+import glob
+import pwd
+import grp
 import shutil
 import settings
 import tempfile
@@ -383,6 +386,8 @@ def configure_supervisor(application=None, uwsgi_args={}):
         uwsgi_config += 'directory={0}\n'.format(os.path.join(settings.APPLICATION_BASE_DIR, \
             application))
         uwsgi_config += 'user={0}\n'.format(settings.APPLICATION_USER)
+        uwsgi_config += 'redirect_stderr=true\n'
+        uwsgi_config += 'stdout_logfile={0}/{1}.log\n'.format(settings.SUPERVISOR_CONF_DIR, application)
         uwsgi_config += 'stopsignal=QUIT\n'
         output['uwsgi_config_{0}'.format(instance)] = uwsgi_config
         # create config
@@ -465,14 +470,24 @@ def restart_application(app_name=None):
     log = config.get_logger('restart_application')
     errors = {}
     output = {}
-    # attempt to stop application first
-    stop_application(app_name)
     log.info('{0}: restarting application'.format(app_name))
     app_config = utils.get_application_config(app_name)
     try:
         app_config = json.loads(app_config)
     except:
         raise RuntimeError('Invalid or missing application config')
+    # HACK: chown the state dir (and existing files)
+    for f in glob.iglob('{0}'.format(settings.APPLICATION_STATE_DIR)):
+        os.chown(f, pwd.getpwnam(settings.APPLICATION_USER).pw_uid, \
+            grp.getgrnam(settings.APPLICATION_GROUP).gr_gid)
+    for f in glob.iglob('{0}/*'.format(settings.APPLICATION_STATE_DIR)):
+        os.chown(f, pwd.getpwnam(settings.APPLICATION_USER).pw_uid, \
+            grp.getgrnam(settings.APPLICATION_GROUP).gr_gid)
+    for f in glob.iglob('{0}/*/*'.format(settings.APPLICATION_STATE_DIR)):
+        os.chown(f, pwd.getpwnam(settings.APPLICATION_USER).pw_uid, \
+            grp.getgrnam(settings.APPLICATION_GROUP).gr_gid)
+    # attempt to stop application first
+    stop_application(app_name)
     # signal nginx to start
     for instance in app_config['instances'][settings.NODE_NAME]:
         app_nginx_conf = os.path.join(settings.WEBSERVER_CONF_DIR, 'nginx_{0}_{1}.conf'.format(app_name, instance))
@@ -511,14 +526,15 @@ def remove_application(app_name=None):
     log = config.get_logger('remove_application')
     errors = {}
     output = {}
+    if app_name not in utils.get_node_applications():
+        raise NameError('Application not deployed to this node')
     app_config = utils.get_application_config(app_name)
     try:
         app_config = json.loads(app_config)
+        # attempt to stop application first
+        stop_application(app_name)
     except:
         pass # ignore errors on removal
-    # attempt to stop application first
-    stop_application(app_name)
-    log.info('{0}: removing application'.format(app_name))
     # remove configs
     app_state_dir = os.path.join(settings.APPLICATION_STATE_DIR, app_name)
     app_dir = os.path.join(settings.APPLICATION_BASE_DIR, app_name)
@@ -543,9 +559,9 @@ def remove_application(app_name=None):
             os.remove(os.path.join(settings.SUPERVISOR_CONF_DIR, conf))
     output['uwsgi_configs'] = 'removed'
     # clear logs
-    for log in os.listdir(settings.APPLICATION_LOG_DIR):
-        if re.search('{0}*'.format(app_name), log):
-            os.remove(os.path.join(settings.APPLICATION_LOG_DIR, log))
+    for log_file in os.listdir(settings.APPLICATION_LOG_DIR):
+        if re.search('{0}*'.format(app_name), log_file):
+            os.remove(os.path.join(settings.APPLICATION_LOG_DIR, log_file))
     # get app config to remove reserved instances
     if app_config:
         for instance in app_config['instances'][settings.NODE_NAME]:

@@ -96,14 +96,19 @@ def get_application_config(app=None):
     if not application:
         raise NameError('You must specify an application')
     db = application.get_db_connection()
-    app_key = schema.APP_KEY.format(app)
-    return db.get(app_key)
+    app_key = schema.APP_KEY.format(app, '*')
+    res = db.keys(app_key)
+    if res:
+        app = db.get(res[0])
+    else:
+        app = None
+    return app
 
 def update_application_config(app=None, config={}):
     if not application:
         raise NameError('You must specify an application')
     db = application.get_db_connection()
-    app_key = schema.APP_KEY.format(app)
+    app_key = schema.APP_KEY.format(app, '')
     db.set(app_key, json.dumps(config))
     return True
 
@@ -111,8 +116,10 @@ def remove_application_config(app=None):
     if not application:
         raise NameError('You must specify an application')
     db = application.get_db_connection()
-    app_key = schema.APP_KEY.format(app)
-    db.delete(app_key)
+    app_key = schema.APP_KEY.format(app, '*')
+    res = db.keys(app_key)
+    for k in res:
+        db.delete(k)
     return True
 
 def get_next_application_port():
@@ -169,14 +176,14 @@ def add_app_to_node_app_list(app_name=None):
     if not app_name:
         raise NameError('You must specify an application name')
     db = application.get_db_connection()
-    db.sadd(schema.NODE_APPS_KEY, app_name)
+    db.sadd(schema.NODE_APPS_KEY.format(settings.NODE_NAME), app_name)
     return True
 
 def remove_app_from_node_app_list(app_name=None):
     if not app_name:
         raise NameError('You must specify an application name')
     db = application.get_db_connection()
-    db.srem(schema.NODE_APPS_KEY, app_name)
+    db.srem(schema.NODE_APPS_KEY.format(settings.NODE_NAME), app_name)
     return True
 
 def publish_client_message(message={}):
@@ -188,4 +195,10 @@ def publish_client_message(message={}):
         message = {'message': message}
     db.publish(settings.CLIENT_CHANNEL, json.dumps(message))
     return True
+
+def get_node_applications(node_name=settings.NODE_NAME):
+    if not node_name:
+        raise NameError('You must specify a node_name')
+    db = application.get_db_connection()
+    return db.smembers(schema.NODE_APPS_KEY.format(node_name))
 

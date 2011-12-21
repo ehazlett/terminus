@@ -20,7 +20,7 @@
       </thead>
       {% for task in tasks|sort(attribute='date', reverse=True) %}
       <tr>
-        <td width="15%">{% if task.date %}{{task.date|date_from_timestamp}}{% endif %}</td>
+        <td width="20%">{% if task.date %}{{task.date|date_from_timestamp}}{% endif %}</td>
         <td>
             <dd>{{task.task}}</dd>
             {% if task.result %}
@@ -30,19 +30,19 @@
         </td>
         <td width="10%">
           {% if task.status == 'new' %}
-          <span class="label success">New</span>
+          <span class="label success">{{_('New')}}</span>
           {% elif task.status == 'running' %}
-          <span class="label warning">Running</span>
+          <span class="label warning">{{_('Running')}}</span>
           {% else %}
-          <span class="label">Complete</span>
+          <span class="label">{{_('Complete')}}</span>
           {% endif %}
         </td>
-        <td width="10%"><a class="btn" href="#" data-url="{{url_for('delete_task', task_id=task.task_id)}}">Delete</a></td>
+        <td width="10%"><a class="btn" href="#" data-url="{{url_for('delete_task', task_id=task.task_id)}}">{{_('Delete')}}</a></td>
       </tr>
       {% endfor %}
     </table>
     {% else %}
-    <div>There are no tasks.</div>
+    <div class="info">{{_('There are no tasks.')}}</div>
     {% endif %}
   </div>
 </div>
@@ -50,12 +50,12 @@
   $(document).ready(function(){
     $("#tasks").tablesorter({ sortList: [[0,1]] });
     $("#tasks a.btn").click(function() {
-      if (confirm('Are you sure you want to delete the task?')) {
+      if (confirm("{{_('Are you sure you want to delete the task?')}}")) {
         $(location).attr('href', (this).getAttribute('data-url'));
       }
     });
     $("a.btn.delete-all-tasks").click(function(){
-      if (confirm('Are you sure you want to delete all tasks?')) {
+      if (confirm("{{_('Are you sure you want to delete all tasks?')}}")) {
         $(location).attr('href', (this).getAttribute('data-url'));
       }
     });
