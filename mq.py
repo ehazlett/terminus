@@ -25,15 +25,15 @@ def master_listener():
 
 def heartbeat():
     db = get_db_connection()
-    data = {
-        'node': settings.NODE_NAME, 
-        'action': 'heartbeat', 
-        'status': 'available', 
-        'version': settings.VERSION,
-        'load': os.getloadavg(),
-    }
     k = schema.HEARTBEAT_KEY
     while True:
+        data = {
+            'node': settings.NODE_NAME, 
+            'action': 'heartbeat', 
+            'status': 'available', 
+            'version': settings.VERSION,
+            'load': os.getloadavg(),
+        }
         db.set(k, json.dumps(data))
         db.expire(k, settings.HEARTBEAT_INTERVAL)
         time.sleep(settings.HEARTBEAT_INTERVAL)
