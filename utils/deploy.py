@@ -21,10 +21,11 @@ except ImportError:
     import json
 
 @task
-def deploy_app(package=None, build_ve=True, force_rebuild_ve=False):
+def deploy_app(app_name=None, package=None, build_ve=True, force_rebuild_ve=False):
     """
     Deploys application
 
+    :keyword app_name: Name of application to deploy
     :keyword package: Package to deploy (as tar.gz)
     :keyword build_ve: Builds virtualenv for app
     :keyword force_rebuild_ve: Forces a rebuild of the virtualenv (destroys existing)
@@ -43,8 +44,12 @@ def deploy_app(package=None, build_ve=True, force_rebuild_ve=False):
         manifest = os.path.join(tmp_deploy_dir, 'manifest.json')
         if os.path.exists(manifest):
             mdata = json.loads(open(manifest, 'r').read())
-            if 'application' in mdata:
-                app_name = mdata['application']
+            if not app_name:
+                if 'application' in mdata:
+                    app_name = mdata['application']
+            if not app_name:
+                errors['deploy'] = 'Unspecified application name or missing in manifest'
+            else:
                 ## attempt to stop before deploy
                 #stop_application(app_name)
                 # get app config
@@ -56,6 +61,11 @@ def deploy_app(package=None, build_ve=True, force_rebuild_ve=False):
                         app_config = {}
                 else:
                     app_config = {}
+                # create a uuid if non existent
+                if 'uuid' not in app_config:
+                    app_uuid = str(uuid.uuid4())
+                    log.warn('UUID not found for {0}.  Assigning {1}'.format(app_name, app_uuid))
+                    app_config['uuid'] = app_uuid
                 if 'version' in mdata:
                     version = mdata['version']
                     log.info('Deploying version {0}'.format(version))
@@ -171,8 +181,6 @@ def deploy_app(package=None, build_ve=True, force_rebuild_ve=False):
                 output['configure_webserver'] = configure_webserver(application=app_name)
                 # restart app
                 restart_application(app_name)
-            else:
-                errors['deploy'] = 'invalid package manifest (missing application attribute)'
         else:
             log.error('Missing package manifest')
             errors['deploy'] = 'missing package manifest'

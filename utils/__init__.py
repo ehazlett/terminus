@@ -186,14 +186,14 @@ def remove_app_from_node_app_list(app_name=None):
     db.srem(schema.NODE_APPS_KEY.format(settings.NODE_NAME), app_name)
     return True
 
-def publish_client_message(message={}):
-    if not message:
+def publish_client_message(msg={}):
+    if not msg:
         raise NameError('You must specify a message')
     db = application.get_db_connection()
     # check type
-    if not isinstance(message, dict):
-        message = {'message': message}
-    db.publish(settings.CLIENT_CHANNEL, json.dumps(message))
+    if not isinstance(msg, dict):
+        msg = {'data': msg}
+    db.publish(settings.CLIENT_CHANNEL, json.dumps(msg))
     return True
 
 def get_node_applications(node_name=settings.NODE_NAME):

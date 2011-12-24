@@ -12,6 +12,7 @@ APP_NAME = 'terminus'
 # add api keys here for api access
 API_KEYS = (
     'defaultapikey',
+    'Xxd0x15R|9xbexc5xfbev{^ddx13xa1x18xba`x11xc8fx04xd0x0f$x05`Tx8cxe6',
 )
 DEBUG = True
 # db
@@ -26,6 +27,8 @@ LOCALES = (
 )
 LOG_LEVEL = logging.DEBUG
 NODE_NAME = os.uname()[1]
+NODE_ADDRESS = '127.0.0.1'
+NODE_PORT = 5000
 PROJECT_PATH = os.path.dirname(__file__)
 SECRET_KEY = "<SECRET_KEY>"
 # queue settings

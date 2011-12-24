@@ -32,6 +32,7 @@ import queue
 import schema
 import messages
 from decorators import admin_required, login_required, api_key_required
+import mq
 
 app = Flask(__name__)
 app.debug = settings.DEBUG
@@ -320,10 +321,13 @@ def api(action=None):
             return jsonify({'name': app.config['APP_NAME'], 'version': app.config['VERSION']})
         elif action.lower() == 'deploy':
             data = {}
+            app_name = None
+            if 'application' in request.form:
+                app_name = request.form['application']
             f = request.files['package']
             pkg_name = tempfile.mktemp()
             f.save(pkg_name)
-            data['task_id'] = deploy.deploy_app.delay(pkg_name).key
+            data['task_id'] = deploy.deploy_app.delay(app_name, pkg_name).key
         elif action == 'restart':
             data = {}
             if 'application' not in request.form:
@@ -350,7 +354,7 @@ def api(action=None):
         data = {'status': 'error', 'result': str(e)}
     return jsonify(data)
 
-@app.route("/api/task/<task_id>/", methods=['GET', 'POST'])
+@app.route("/api/task/<task_id>", methods=['GET', 'POST'])
 @api_key_required
 def api_task(task_id=None):
     try:
@@ -363,7 +367,7 @@ def api_task(task_id=None):
         data = {'status': 'error', 'result': str(e)}
     return jsonify(data)
 
-@app.route("/api/generateapikey/")
+@app.route("/api/generateapikey")
 @login_required
 def api_generate_apikey():
     data = {
@@ -499,7 +503,7 @@ if __name__=="__main__":
     op.add_option('--enable-user', dest='enable_user', action='store_true', default=False, help='Enable user')
     op.add_option('--disable-user', dest='disable_user', action='store_true', default=False, help='Disable user')
     op.add_option('--host', dest='host', default='localhost', help='Host to listen on for the Werkzeug debug server')
-    op.add_option('--port', dest='port', default='5000', help='Port to run Werkzeug debug server')
+    op.add_option('--port', dest='port', type=int, default=5000, help='Port to run Werkzeug debug server')
     opts, args = op.parse_args()
 
     # check app dirs
@@ -513,9 +517,18 @@ if __name__=="__main__":
     if opts.disable_user:
         toggle_user(False)
         sys.exit(0)
+    if opts.port:
+        port = opts.port
+        # override port
+        app.config['NODE_PORT'] = port
+        settings.NODE_PORT = port
+    else:
+        port = app.config['NODE_PORT']
     # start supervisor
     start_supervisor()
+    # start mq
+    mq.main()
     # run app
-    app.run(host=opts.host, port=int(opts.port))
+    app.run(host=opts.host, port=int(port))
 
 
